@@ -44,6 +44,8 @@
 #include "arch/x86/x86_traits.hh"
 #include "base/bitunion.hh"
 #include "base/logging.hh"
+#include "base/trace.hh"
+#include "debug/Decoder.hh"
 
 //These get defined in some system headers (at least termbits.h). That confuses
 //things here significantly.
@@ -153,6 +155,8 @@ namespace X86ISA
         MISCREG_MCG_CAP,
         MISCREG_MCG_STATUS,
         MISCREG_MCG_CTL,
+
+        MISCREG_IA32_MISC_ENABLE,
 
         MISCREG_DEBUG_CTL_MSR,
 
@@ -403,10 +407,15 @@ namespace X86ISA
     static inline bool
     isValidMiscReg(int index)
     {
-        return (index >= MISCREG_CR0 && index < NUM_MISCREGS &&
+        bool rv;
+
+        rv = (index >= MISCREG_CR0 && index < NUM_MISCREGS &&
                 index != MISCREG_CR1 &&
                 !(index > MISCREG_CR4 && index < MISCREG_CR8) &&
                 !(index > MISCREG_CR8 && index <= MISCREG_CR15));
+        //DPRINTF(Decoder, "isValidMiscReg index %d rv %d CR4 %#x\n",
+        //    index, (rv) ? 1 : 0, MISCREG_CR4);
+        return (rv);
     }
 
     static inline MiscRegIndex

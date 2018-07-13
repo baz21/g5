@@ -2103,7 +2103,7 @@ TableWalker::insertTableEntry(DescriptorBase &descriptor, bool longDescriptor)
             descriptor.getRawData());
 
     // Insert the entry into the TLB
-    tlb->insert(currState->vaddr, te);
+    tlb->insert(currState->vaddr, te, currState->tc);
     if (!currState->timing) {
         currState->tc  = NULL;
         currState->req = NULL;

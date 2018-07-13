@@ -257,6 +257,8 @@ Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
                 " none happened inst: %s\n",
                 inst->pc.instAddr(), inst->predictedTarget.instAddr(), *inst);
 
+            ppCPUMispredict->notify(inst);
+
             reason = BranchData::BadlyPredictedBranch;
         } else if (inst->predictedTarget == target) {
             /* Branch prediction got the right target, kill the branch and
@@ -864,7 +866,17 @@ Execute::doInstCommitAccounting(MinorDynInstPtr inst)
     if (inst->traceData)
         inst->traceData->setCPSeq(thread->numOp);
 
+    cpu.probeInstCommitCPU(inst);
     cpu.probeInstCommit(inst->staticInst);
+}
+
+void
+Execute::regProbePoints()
+{
+    DPRINTF(MinorExecute, "XXX-BZ Registering CPU "
+        "MinorExecute::regProbePoints()\n");
+    ppCPUMispredict = new ProbePointArg<Minor::MinorDynInstPtr>
+        (cpu.getProbeManager(), "CPUMinorBranchMispredict");
 }
 
 bool

@@ -46,7 +46,7 @@
 
 def template ErrorDecode {{
     {
-        panic("X86 decoder internal error: '%s' %s",
+        warn("X86 decoder internal error: '%s' %s",
                 %(message)s, machInst);
     }
 }};

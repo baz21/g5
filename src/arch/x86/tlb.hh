@@ -48,6 +48,8 @@
 #include "base/trie.hh"
 #include "mem/request.hh"
 #include "params/X86TLB.hh"
+#include "sim/probe/pmu.hh"
+#include "sim/probe/tlb.hh"
 
 class ThreadContext;
 
@@ -115,6 +117,7 @@ namespace X86ISA
       public:
 
         void evictLRU();
+        void dump(const char *);
 
         uint64_t
         nextSeq()
@@ -144,7 +147,7 @@ namespace X86ISA
         Fault finalizePhysical(const RequestPtr &req, ThreadContext *tc,
                                Mode mode) const override;
 
-        TlbEntry *insert(Addr vpn, const TlbEntry &entry);
+        TlbEntry *insert(Addr vpn, const TlbEntry &entry, ThreadContext *tc);
 
         /*
          * Function to register Stats
@@ -166,6 +169,15 @@ namespace X86ISA
          * @return A pointer to the walker master port
          */
         BaseMasterPort *getMasterPort() override;
+
+        void regProbePoints() override;
+
+      protected:
+        /** PMU and TLB probe for TLB refills */
+        ProbePoints::PMUUPtr ppRefills;
+        ProbePoints::TLBUPtr ppTLBRefills;
+        ProbePoints::TLBUPtr ppTLBHit;
+        ProbePoints::TLBUPtr ppTLBMiss;
     };
 }
 

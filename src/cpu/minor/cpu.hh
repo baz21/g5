@@ -46,9 +46,10 @@
 #ifndef __CPU_MINOR_CPU_HH__
 #define __CPU_MINOR_CPU_HH__
 
-#include "cpu/minor/activity.hh"
-#include "cpu/minor/stats.hh"
 #include "cpu/base.hh"
+#include "cpu/minor/activity.hh"
+#include "cpu/minor/dyn_inst.hh"
+#include "cpu/minor/stats.hh"
 #include "cpu/simple_thread.hh"
 #include "enums/ThreadPolicy.hh"
 #include "params/MinorCPU.hh"
@@ -190,6 +191,19 @@ class MinorCPU : public BaseCPU
      *  already been idled.  The stage argument should be from the
      *  enumeration Pipeline::StageId */
     void wakeupOnEvent(unsigned int stage_id);
+
+    void regProbePoints();
+
+    void probeInstCommitCPU(const Minor::MinorDynInstPtr &inst);
+
+  private:
+#if 0
+    ProbePointArg<Minor::MinorDynInstPtr> *ppCPUCycles;
+#endif
+    ProbePointArg<Minor::MinorDynInstPtr> *ppCPURetiredInsts;
+    ProbePointArg<Minor::MinorDynInstPtr> *ppCPURetiredLoads;
+    ProbePointArg<Minor::MinorDynInstPtr> *ppCPURetiredStores;
+    ProbePointArg<Minor::MinorDynInstPtr> *ppCPURetiredBranches;
 };
 
 #endif /* __CPU_MINOR_CPU_HH__ */

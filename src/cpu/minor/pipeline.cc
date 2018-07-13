@@ -114,6 +114,13 @@ Pipeline::regStats()
 }
 
 void
+Pipeline::regProbePoints()
+{
+
+        execute.regProbePoints();
+}
+
+void
 Pipeline::minorTrace() const
 {
     fetch1.minorTrace();

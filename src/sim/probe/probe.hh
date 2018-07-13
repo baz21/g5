@@ -66,6 +66,7 @@
 
 #include "base/compiler.hh"
 #include "base/trace.hh"
+#include "debug/SimpleTrace.hh"
 #include "sim/sim_object.hh"
 
 /** Forward declare the ProbeManager. */
@@ -287,7 +288,9 @@ class ProbePointArg : public ProbePoint
      */
     void notify(const Arg &arg)
     {
+//DPRINTFR(SimpleTrace, "XXX-BZ void notify(const Arg &arg)\n");
         for (auto l = listeners.begin(); l != listeners.end(); ++l) {
+//DPRINTFR(SimpleTrace, "XXX-BZ l -> notify\n");
             (*l)->notify(arg);
         }
     }

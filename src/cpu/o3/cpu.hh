@@ -260,6 +260,19 @@ class FullO3CPU : public BaseO3CPU
     /** Register probe points. */
     void regProbePoints() override;
 
+  protected:
+    void probeInstCommitCPU(const DynInstPtr &inst);
+
+  private:
+#if 0
+    ProbePointArg<DynInstPtr> *ppCPUCycles;
+#endif
+    ProbePointArg<DynInstPtr> *ppCPURetiredInsts;
+    ProbePointArg<DynInstPtr> *ppCPURetiredLoads;
+    ProbePointArg<DynInstPtr> *ppCPURetiredStores;
+    ProbePointArg<DynInstPtr> *ppCPURetiredBranches;
+
+  public:
     void demapPage(Addr vaddr, uint64_t asn)
     {
         this->itb->demapPage(vaddr, asn);

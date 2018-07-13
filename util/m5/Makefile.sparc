@@ -31,7 +31,7 @@
 ifneq ($(shell uname -m), sun4v)
 CROSS_COMPILE?=sparc64-sun-solaris2.10-
 endif
-CC=$(CROSS_COMPILE)gcc
+CC=$(CROSS_COMPILE)cc
 AS=$(CROSS_COMPILE)as
 LD=$(CROSS_COMPILE)ld
 

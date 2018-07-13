@@ -45,6 +45,8 @@
 
 #include "base/logging.hh"
 #include "mem/request.hh"
+#include "sim/probe/probe.hh"
+#include "sim/probe/tlb.hh"
 #include "sim/sim_object.hh"
 
 class ThreadContext;
@@ -59,6 +61,7 @@ class BaseTLB : public SimObject
 
   public:
     enum Mode { Read, Write, Execute };
+    static const char * const ModeName[];
 
     class Translation
     {
@@ -141,6 +144,15 @@ class BaseTLB : public SimObject
     virtual BaseMasterPort* getMasterPort() { return NULL; }
 
     void memInvalidate() { flushAll(); }
+
+    ProbePoints::TLBUPtr
+    tlbProbePoint(const char *name)
+    {
+        ProbePoints::TLBUPtr ptr;
+        ptr.reset(new ProbePoints::TLB(getProbeManager(), name));
+
+        return ptr;
+    }
 };
 
 class GenericTLB : public BaseTLB

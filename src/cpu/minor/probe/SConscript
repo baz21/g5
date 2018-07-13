@@ -1,0 +1,12 @@
+# -*- mode:python -*-
+# -
+# Copyright (c) 2016 Bjoern A. Zeeb
+# All rights reserved.
+#
+
+Import('*')
+
+if 'MinorCPU' in env['CPU_MODELS']:
+    SimObject('SimpleTraceMinor.py')
+    Source('simple_trace_minor.cc')
+

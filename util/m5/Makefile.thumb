@@ -44,7 +44,7 @@
 ifneq ($(shell uname -m), arm)
 CROSS_COMPILE?=arm-none-linux-gnueabi-
 endif
-CC=$(CROSS_COMPILE)gcc
+CC=$(CROSS_COMPILE)cc
 AS=$(CROSS_COMPILE)as
 LD=$(CROSS_COMPILE)ld
 AR=$(CROSS_COMPILE)ar

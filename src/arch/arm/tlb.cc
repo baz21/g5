@@ -192,7 +192,7 @@ TLB::lookup(Addr va, uint16_t asn, uint8_t vmid, bool hyp, bool secure,
 
 // insert a new TLB entry
 void
-TLB::insert(Addr addr, TlbEntry &entry)
+TLB::insert(Addr addr, TlbEntry &entry, ThreadContext *tc)
 {
     DPRINTF(TLB, "Inserting entry into TLB with pfn:%#x size:%#x vpn: %#x"
             " asid:%d vmid:%d N:%d global:%d valid:%d nc:%d xn:%d"
@@ -219,6 +219,8 @@ TLB::insert(Addr addr, TlbEntry &entry)
 
     inserts++;
     ppRefills->notify(1);
+    ppTLBRefills->notify(std::make_tuple(entry.vpn, tc->instAddr(),
+        entry.size));
 }
 
 void
@@ -559,6 +561,9 @@ void
 TLB::regProbePoints()
 {
     ppRefills.reset(new ProbePoints::PMU(getProbeManager(), "Refills"));
+    ppTLBRefills.reset(new ProbePoints::TLB(getProbeManager(), "TLBRefills"));
+    ppTLBHit.reset(new ProbePoints::TLB(getProbeManager(), "TLBHit"));
+    ppTLBMiss.reset(new ProbePoints::TLB(getProbeManager(), "TLBMiss"));
 }
 
 Fault
@@ -1437,6 +1442,7 @@ TLB::getTE(TlbEntry **te, const RequestPtr &req, ThreadContext *tc, Mode mode,
         // re-retreaving in table walker for speed
         DPRINTF(TLB, "TLB Miss: Starting hardware table walker for %#x(%d:%d)\n",
                 vaddr_tainted, asid, vmid);
+        ppTLBMiss->notify(std::make_tuple(req->getVaddr(), tc->instAddr(), 0));
         Fault fault;
         fault = tableWalker->walk(req, tc, asid, vmid, isHyp, mode,
                                   translation, timing, functional, is_secure,
@@ -1457,6 +1463,8 @@ TLB::getTE(TlbEntry **te, const RequestPtr &req, ThreadContext *tc, Mode mode,
             writeHits++;
         else
             readHits++;
+        ppTLBHit->notify(std::make_tuple(req->getVaddr(), tc->instAddr(),
+            (*te)->size));
     }
     return NoFault;
 }

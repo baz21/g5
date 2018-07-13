@@ -55,7 +55,8 @@
                 0x4: verr_Mw_or_Rv();
                 0x5: verw_Mw_or_Rv();
                 //0x6: jmpe_Ev(); // IA-64
-                default: Inst::UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 58"}});
             }
             //0x01: group7(); // Ugly, ugly, ugly...
             0x01: decode MODRM_REG {
@@ -65,7 +66,8 @@
                         0x2: vmlaunch();
                         0x3: vmresume();
                         0x4: vmxoff();
-                        default: Inst::UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 68"}});
                     }
                     default: sgdt_Ms();
                 }
@@ -85,7 +87,8 @@
                            MicroHalt hltObj(machInst, mnemonic, 0x0);
                            hltObj.execute(xc, traceData);
                         }});
-                        default: Inst::UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 88"}});
                     }
                     default: sidt_Ms();
                 }
@@ -134,7 +137,8 @@
                     0x3: decode MODRM_RM {
                         0x0: Inst::SWAPGS();
                         0x1: Inst::RDTSCP();
-                        default: Inst::UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 137"}});
                     }
                     default: Inst::INVLPG(M);
                 }
@@ -219,8 +223,8 @@
                     0x58: m5reserved4({{
                         warn("M5 reserved opcode 4 ignored.\n");
                     }}, IsNonSpeculative);
-                    0x59: m5reserved5({{
-                        warn("M5 reserved opcode 5 ignored.\n");
+                    0x59: m5toggleTracing({{
+                        PseudoInst::toggleTracing(xc->tcBase());
                     }}, IsNonSpeculative);
                     0x5a: m5_work_begin({{
                         PseudoInst::workbegin(xc->tcBase(), Rdi, Rsi);
@@ -231,7 +235,8 @@
                     0x62: m5togglesync({{
                         PseudoInst::togglesync(xc->tcBase());
                     }}, IsNonSpeculative, IsQuiesce);
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 234"}});
                 }
             }
             0x05: decode FullSystemInt {
@@ -260,9 +265,12 @@
         0x01: decode OPCODE_OP_BOTTOM3 {
             0x0: invd();
             0x1: wbinvd();
-            0x2: Inst::UD2();
-            0x3: Inst::UD2();
-            0x4: Inst::UD2();
+            0x2: M5InternalError::error(
+                {{"./decoder/two_byte_opcodes.isa 263"}});
+            0x3: M5InternalError::error(
+                {{"./decoder/two_byte_opcodes.isa 264"}});
+            0x4: M5InternalError::error(
+                {{"./decoder/two_byte_opcodes.isa 265"}});
             0x5: Inst::PREFETCH(Mb);
             0x6: FailUnimpl::femms();
             0x7: decode IMMEDIATE {
@@ -290,7 +298,8 @@
                 0xB7: Inst::PMULHRW(Pq,Qq);
                 0xBB: pswapd_Pq_Qq();
                 0xBF: pavgusb_Pq_Qq();
-                default: Inst::UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 293"}});
             }
         }
         format Inst{
@@ -318,7 +327,8 @@
                     0x1: MOVSS(Wd,Vd);
                     0x2: WarnUnimpl::movsldup_Vo_Wo();
                     0x6: WarnUnimpl::movshdup_Vo_Wo();
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 321"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -336,9 +346,11 @@
                     0x0: MOVSD(Vq,Wq);
                     0x1: MOVSD(Wq,Vq);
                     0x2: MOVDDUP(Vo,Wq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 339"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 341"}});
             }
             0x03: decode OPCODE_OP_BOTTOM3 {
                 //group16();
@@ -366,14 +378,16 @@
                     0x2: CondInst::MOV(
                         {{isValidMiscReg(MISCREG_CR(MODRM_REG))}},Cd,Rd);
                     0x3: MOV(Dd,Rd);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 369"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
                     0x0: MOV(Rd,Cd);
                     0x2: MOV(Cd,Rd);
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 376"}});
             }
             0x05: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -394,7 +408,8 @@
                     0x2: CVTSI2SS(Vd,Ed);
                     0x4: CVTTSS2SI(Gd,Wd);
                     0x5: CVTSS2SI(Gd,Wd);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 397"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -414,9 +429,11 @@
                     // The size of the W operand should be q, not dp
                     0x4: CVTTSD2SI(Gdp,Wdp);
                     0x5: CVTSD2SI(Gd,Wq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 417"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 419"}});
             }
         }
         0x06: decode OPCODE_OP_BOTTOM3 {
@@ -431,7 +448,8 @@
                 default: sysenter();
             }
             0x5: sysexit();
-            0x6: Inst::UD2();
+            0x6: M5InternalError::error(
+                {{"./decoder/two_byte_opcodes.isa 434"}});
             0x7: getsec();
         }
         0x07: decode OPCODE_OP_BOTTOM3 {
@@ -441,7 +459,8 @@
             0x2: M5InternalError::error(
                 {{"Three byte opcode shouldn't be handled by "
                   "two_byte_opcodes.isa!"}});
-            default: UD2();
+            default: M5InternalError::error(
+                {{"./decoder/two_byte_opcodes.isa 444"}});
         }
         format Inst {
             0x08: decode OPCODE_OP_BOTTOM3 {
@@ -481,7 +500,8 @@
                     0x1: SQRTSS(Vd,Wd);
                     0x2: WarnUnimpl::rsqrtss_Vd_Wd();
                     0x3: RCPSS(Vd,Wd);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 484"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -491,14 +511,17 @@
                     0x5: ANDNPD(Vo,Wo);
                     0x6: ORPD(Vo,Wo);
                     0x7: XORPD(Vo,Wo);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 494"}});
                 }
                 // repne (0xF2)
                 0x8: decode OPCODE_OP_BOTTOM3 {
                     0x1: SQRTSD(Vq,Wq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 499"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 501"}});
             }
             0x0B: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -543,9 +566,11 @@
                     0x5: MINSD(Vq,Wq);
                     0x6: DIVSD(Vq,Wq);
                     0x7: MAXSD(Vq,Wq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 546"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 548"}});
             }
             0x0C: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -570,7 +595,8 @@
                     0x6: PCMPGTD(Vo,Wo);
                     0x7: PACKUSWB(Vo,Wo);
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 573"}});
             }
             0x0D: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -581,12 +607,14 @@
                     0x3: PACKSSDW(Pq,Qq);
                     0x6: MOVD(Pq,Edp);
                     0x7: MOVQ(Pq,Qq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 584"}});
                 }
                 // repe (0xF3)
                 0x4: decode OPCODE_OP_BOTTOM3 {
                     0x7: MOVDQU(Vo,Wo);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 589"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -599,7 +627,8 @@
                     0x6: MOVD(Vo,Edp);
                     0x7: MOVDQA(Vo,Wo);
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 602"}});
             }
             0x0E: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -610,20 +639,23 @@
                         0x2: PSRLW(PRq,Ib);
                         0x4: PSRAW(PRq,Ib);
                         0x6: PSLLW(PRq,Ib);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 613"}});
                     }
                     //0x2: group13_pshimd();
                     0x2: decode MODRM_REG {
                         0x2: PSRLD(PRq,Ib);
                         0x4: PSRAD(PRq,Ib);
                         0x6: PSLLD(PRq,Ib);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 620"}});
                     }
                     //0x3: group14_pshimq();
                     0x3: decode MODRM_REG {
                         0x2: PSRLQ(PRq,Ib);
                         0x6: PSLLQ(PRq,Ib);
-                        default: Inst::UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 626"}});
                     }
                     0x4: Inst::PCMPEQB(Pq,Qq);
                     0x5: Inst::PCMPEQW(Pq,Qq);
@@ -633,7 +665,8 @@
                 // repe (0xF3)
                 0x4: decode OPCODE_OP_BOTTOM3 {
                     0x0: PSHUFHW(Vo,Wo,Ib);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 636"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -649,7 +682,8 @@
                         0x2: PSRLD(VRo,Ib);
                         0x4: PSRAD(VRo,Ib);
                         0x6: PSLLD(VRo,Ib);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 652"}});
                     }
                     //0x3: group14_pshimq();
                     0x3: decode MODRM_REG {
@@ -657,19 +691,23 @@
                         0x3: PSRLDQ(VRo,Ib);
                         0x6: PSLLQ(VRo,Ib);
                         0x7: PSLLDQ(VRo,Ib);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 660"}});
                     }
                     0x4: PCMPEQB(Vo,Wo);
                     0x5: PCMPEQW(Vo,Wo);
                     0x6: PCMPEQD(Vo,Wo);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 665"}});
                 }
                 // repne (0xF2)
                 0x8: decode OPCODE_OP_BOTTOM3 {
                     0x0: PSHUFLW(Vo,Wo,Ib);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 670"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 672"}});
             }
             0x0F: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -678,13 +716,15 @@
                     0x1: WarnUnimpl::vmwrite_Gdp_Edp();
                     0x6: MOVD(Edp,Pdp);
                     0x7: MOVQ(Qq,Pq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 681"}});
                 }
                 // repe (0xF3)
                 0x4: decode OPCODE_OP_BOTTOM3 {
                     0x6: MOVQ(Vq,Wq);
                     0x7: MOVDQU(Wo,Vo);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 687"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -692,15 +732,18 @@
                     0x5: WarnUnimpl::hsubpd_Vo_Wo();
                     0x6: MOVD(Edp,Vd);
                     0x7: MOVDQA(Wo,Vo);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 695"}});
                 }
                 // repne (0xF2)
                 0x8: decode OPCODE_OP_BOTTOM3 {
                     0x4: HADDPS(Vo,Wo);
                     0x5: WarnUnimpl::hsubps_Vo_Wo();
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 701"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 703"}});
             }
             0x10: decode OPCODE_OP_BOTTOM3 {
                 0x0: JO(Jz);
@@ -765,7 +808,8 @@
             0x3: Inst::BT(Ev,Gv);
             0x4: Inst::SHLD(Ev,Gv,Ib);
             0x5: Inst::SHLD(Ev,Gv);
-            default: Inst::UD2();
+            default: M5InternalError::error(
+                {{"./decoder/two_byte_opcodes.isa 768"}});
         }
         0x15: decode OPCODE_OP_BOTTOM3 {
             0x0: push_gs();
@@ -783,7 +827,8 @@
                                  {{/*Nothing*/}}, IsMemBarrier);
                     0x7: BasicOperate::SFENCE(
                                  {{/*Nothing*/}}, IsWriteBarrier);
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 786"}});
                 }
                 default: decode MODRM_REG {
                     0x0: decode OPSIZE {
@@ -801,9 +846,12 @@
                     0x4: xsave();
                     0x5: xrstor();
                     0x6: decode LEGACY_DECODEVAL {
-                        0x0: Inst::UD2();
+                        0x0: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 850"}});
                         0x1: Inst::CLWB(Mb);
                         default: Inst::UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 854"}});
                     }
                     0x7: decode LEGACY_DECODEVAL {
                         0x0: Inst::CLFLUSH(Mb);
@@ -835,14 +883,16 @@
                     0x1: WarnUnimpl::popcnt_Gv_Ev();
                 }
                 //0x1: group10_UD2();
-                0x1: UD2();
+                0x1: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 830"}});
                 //0x2: group8_Ev_Ib();
                 0x2: decode MODRM_REG {
                     0x4: BT(Ev,Ib);
                     0x5: BTS(Ev,Ib);
                     0x6: BTR(Ev,Ib);
                     0x7: BTC(Ev,Ib);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 837"}});
                 }
                 0x3: BTC(Ev,Gv);
                 0x4: BSF(Gv,Ev);
@@ -869,7 +919,8 @@
                         }
                     }
                     0x7: WarnUnimpl::vmptrst_Mq();
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 864"}});
                 }
                 default: decode LEGACY_DECODEVAL {
                     // no prefix
@@ -883,7 +934,8 @@
                     // repe (0xF3)
                     0x4: decode OPCODE_OP_BOTTOM3 {
                         0x2: CMPSS(Vd,Wd,Ib);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 878"}});
                     }
                     // operand size (0x66)
                     0x1: decode OPCODE_OP_BOTTOM3 {
@@ -891,20 +943,24 @@
                         0x4: PINSRW(Vdw,Ew,Ib);
                         0x5: PEXTRW(Gd,VRdq,Ib);
                         0x6: SHUFPD(Vpd,Wpd,Ib);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 886"}});
                     }
                     // repne (0xF2)
                     0x8: decode OPCODE_OP_BOTTOM3 {
                         0x2: CMPSD(Vq,Wq,Ib);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/two_byte_opcodes.isa 891"}});
                     }
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 893"}});
                 }
             }
             0x19: decode OPSIZE {
                 4: BSWAP_D(Bd);
                 8: BSWAP_Q(Bq);
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 899"}});
             }
             0x1A: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -915,12 +971,14 @@
                     0x4: PADDQ(Pq,Qq);
                     0x5: PMULLW(Pq,Qq);
                     0x7: PMOVMSKB(Gd,PRq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 910"}});
                 }
                 // repe (0xF3)
                 0x4: decode OPCODE_OP_BOTTOM3 {
                     0x6: MOVQ2DQ(Vo,PRq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 915"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -937,9 +995,11 @@
                 0x8: decode OPCODE_OP_BOTTOM3 {
                     0x0: WarnUnimpl::addsubps_Vo_Wo();
                     0x6: MOVDQ2Q(Pq,VRq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 932"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 934"}});
             }
             0x1B: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -964,7 +1024,8 @@
                     0x6: PMAXUB(Vo,Wo);
                     0x7: PANDN(Vo,Wo);
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 959"}});
             }
             0x1C: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -976,12 +1037,14 @@
                     0x4: PMULHUW(Pq,Qq);
                     0x5: PMULHW(Pq,Qq);
                     0x7: WarnUnimpl::movntq_Mq_Pq();
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 971"}});
                 }
                 // repe (0xF3)
                 0x4: decode OPCODE_OP_BOTTOM3 {
                     0x6: CVTDQ2PD(Vo,Wq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 976"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -997,9 +1060,11 @@
                 // repne (0xF2)
                 0x8: decode OPCODE_OP_BOTTOM3 {
                     0x6: CVTPD2DQ(Vo,Wo);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 992"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 994"}});
             }
             0x1D: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -1024,7 +1089,8 @@
                     0x6: PMAXSW(Vo,Wo);
                     0x7: PXOR(Vo,Wo);
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 1019"}});
             }
             0x1E: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -1036,7 +1102,8 @@
                     0x5: PMADDWD(Pq,Qq);
                     0x6: PSADBW(Pq,Qq);
                     0x7: MASKMOVQ(Pq,PRq);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 1031"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -1047,14 +1114,17 @@
                     0x5: PMADDWD(Vo,Wo);
                     0x6: PSADBW(Vo,Wo);
                     0x7: MASKMOVDQU(Vo,VRo);
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 1042"}});
                 }
                 // repne (0xF2)
                 0x8: decode OPCODE_OP_BOTTOM3 {
                     0x0: WarnUnimpl::lddqu_Vo_Mo();
-                    default: UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 1047"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 1049"}});
             }
             0x1F: decode LEGACY_DECODEVAL {
                 // no prefix
@@ -1066,7 +1136,8 @@
                     0x4: PADDB(Pq,Qq);
                     0x5: PADDW(Pq,Qq);
                     0x6: PADDD(Pq,Qq);
-                    0x7: UD2();
+                    0x7: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 1061"}});
                 }
                 // operand size (0x66)
                 0x1: decode OPCODE_OP_BOTTOM3 {
@@ -1077,9 +1148,11 @@
                     0x4: PADDB(Vo,Wo);
                     0x5: PADDW(Vo,Wo);
                     0x6: PADDD(Vo,Wo);
-                    0x7: UD2();
+                    0x7: M5InternalError::error(
+                        {{"./decoder/two_byte_opcodes.isa 1072"}});
                 }
-                default: UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/two_byte_opcodes.isa 1074"}});
             }
         }
         default: FailUnimpl::twoByteOps();

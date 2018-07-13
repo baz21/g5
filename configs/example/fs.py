@@ -95,8 +95,10 @@ def build_test_system(np):
     elif buildEnv['TARGET_ISA'] == "sparc":
         test_sys = makeSparcSystem(test_mem_mode, bm[0], cmdline=cmdline)
     elif buildEnv['TARGET_ISA'] == "x86":
-        test_sys = makeLinuxX86System(test_mem_mode, options.num_cpus, bm[0],
-                options.ruby, cmdline=cmdline)
+        test_sys = makeX86System(test_mem_mode, options.num_cpus, bm[0],
+                options.ruby, cmdline=cmdline,
+                loader_config_file=options.loader_config_file,
+                virtblk=options.virtblk)
     elif buildEnv['TARGET_ISA'] == "arm":
         test_sys = makeArmSystem(test_mem_mode, options.machine_type,
                                  options.num_cpus, bm[0], options.dtb_filename,
@@ -106,14 +108,17 @@ def build_test_system(np):
                                  external_memory=
                                    options.external_memory_system,
                                  ruby=options.ruby,
-                                 security=options.enable_security_extensions)
+                                 security=options.enable_security_extensions,
+                                 loader_config_file=options.loader_config_file,
+                                 virtblk=options.virtblk)
         if options.enable_context_switch_stats_dump:
             test_sys.enable_context_switch_stats_dump = True
     else:
         fatal("Incapable of building %s full system!", buildEnv['TARGET_ISA'])
 
     # Set the cache line size for the entire system
-    test_sys.cache_line_size = options.cacheline_size
+    if options.cacheline_size is not None:
+        test_sys.cache_line_size = options.cacheline_size
 
     # Create a top-level voltage domain
     test_sys.voltage_domain = VoltageDomain(voltage = options.sys_voltage)
@@ -233,6 +238,42 @@ def build_test_system(np):
 
         MemConfig.config_mem(options, test_sys)
 
+    if buildEnv['TARGET_ISA'] == 'arm':
+        if options.pmu:
+            for (i, cpu) in enumerate(test_sys.cpu):
+                #print "Enabling events for ArmPMU on cpu.isa[{}]".format(i)
+                cpu.isa[0].pmu.addArchEvents(
+                    cpu=cpu, dtb=cpu.dtb, itb=cpu.itb,
+                    icache=getattr(cpu, "il1_cache", None),
+                    dcache=getattr(cpu, "dl1_cache", None),
+                    l2cache=getattr(cpu, "l2_cache", None))
+
+    if options.simple_trace_en:
+        for (i, cpu) in enumerate(test_sys.cpu):
+            if (options.cpu_type == "detailed" or \
+                options.cpu_type == "arm_detailed"):
+                cpu.simple_trace = SimpleTrace();
+            elif (options.cpu_type == "minor"):
+                cpu.simple_trace = SimpleTraceMinor();
+            elif (options.cpu_type == "timing"):
+                cpu.simple_trace = SimpleTraceSimple();
+            cpu.itb.simple_trace = SimpleTraceTLB();
+            cpu.dtb.simple_trace = SimpleTraceTLB();
+            if (options.caches):
+                cpu.icache.simple_trace = SimpleTraceCACHE();
+                cpu.dcache.simple_trace = SimpleTraceCACHE();
+                # Unless we have an external memory subsystem, the walker
+                # caches are only added for x86; see .addPrivateSplitL1Caches()
+                # calls in ConfigCaches.py
+                # XXX-BZ this only barfed for armv7 not for aarch64, why?
+                if buildEnv['TARGET_ISA'] in ['x86']:
+                    cpu.itb_walker_cache.simple_trace = SimpleTraceCACHE();
+                    cpu.dtb_walker_cache.simple_trace = SimpleTraceCACHE();
+            if (options.l2cache):
+                test_sys.l2cache.simple_trace = SimpleTraceCACHE();
+            if (options.l3cache):
+                test_sys.l3cache.simple_trace = SimpleTraceCACHE();
+
     return test_sys
 
 def build_drive_system(np):
@@ -250,12 +291,14 @@ def build_drive_system(np):
     elif buildEnv['TARGET_ISA'] == 'sparc':
         drive_sys = makeSparcSystem(drive_mem_mode, bm[1], cmdline=cmdline)
     elif buildEnv['TARGET_ISA'] == 'x86':
-        drive_sys = makeLinuxX86System(drive_mem_mode, np, bm[1],
-                                       cmdline=cmdline)
+        drive_sys = makeX86System(drive_mem_mode, np, bm[1], cmdline=cmdline,
+            loader_config_file=options.loader_config_file,
+            virtblk=options.virtblk)
     elif buildEnv['TARGET_ISA'] == 'arm':
         drive_sys = makeArmSystem(drive_mem_mode, options.machine_type, np,
                                   bm[1], options.dtb_filename, cmdline=cmdline,
-                                  ignore_dtb=options.generate_dtb)
+                                  ignore_dtb=options.generate_dtb,
+                                  virtblk=options.virtblk)
 
     # Create a top-level voltage domain
     drive_sys.voltage_domain = VoltageDomain(voltage = options.sys_voltage)
@@ -332,12 +375,15 @@ if options.benchmark:
 else:
     if options.dual:
         bm = [SysConfig(disk=options.disk_image, rootdev=options.root_device,
-                        mem=options.mem_size, os_type=options.os_type),
+                        mem=options.mem_size, os_type=options.os_type,
+                        kernel=options.kernel, virtblk=options.virtblk),
               SysConfig(disk=options.disk_image, rootdev=options.root_device,
-                        mem=options.mem_size, os_type=options.os_type)]
+                        mem=options.mem_size, os_type=options.os_type,
+                        kernel=options.kernel, virtblk=options.virtblk)]
     else:
         bm = [SysConfig(disk=options.disk_image, rootdev=options.root_device,
-                        mem=options.mem_size, os_type=options.os_type)]
+                        mem=options.mem_size, os_type=options.os_type,
+                        kernel=options.kernel, virtblk=options.virtblk)]
 
 np = options.num_cpus
 

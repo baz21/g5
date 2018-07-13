@@ -73,17 +73,18 @@ format WarnUnimpl {
             }
             0x1: decode MODRM_MOD {
                 0x3: Inst::FXCH(Eq);
-                default: Inst::UD2();
+                default: M5InternalError::error({{"./decoder/x87.isa 76"}});
             }
             0x2: decode MODRM_MOD {
                 0x3: decode MODRM_RM {
                     0x0: fnop();
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/x87.isa 81"}});
                 }
                 default: Inst::FST(Ed);
             }
             0x3: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 86"}});
                 default: Inst::FSTP(Ed);
             }
             0x4: decode MODRM_MOD {
@@ -92,7 +93,8 @@ format WarnUnimpl {
                     0x1: Inst::FABS();
                     0x4: ftst();
                     0x5: fxam();
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/x87.isa 95"}});
                 }
                 default: Inst::FLDENV(M);
             }
@@ -154,22 +156,23 @@ format WarnUnimpl {
                 default: ficomp();
             }
             0x4: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 157"}});
                 default: fisub();
             }
             0x5: decode MODRM_MOD {
                 0x3: decode MODRM_RM {
                     0x1: fucompp();
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/x87.isa 163"}});
                 }
                 default: fisubr();
             }
             0x6: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 168"}});
                 default: fidiv();
             }
             0x7: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 172"}});
                 default: fidivr();
             }
         }
@@ -195,9 +198,10 @@ format WarnUnimpl {
                 0x3: decode MODRM_RM {
                     0x2: fnclex();
                     0x3: fninit();
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/x87.isa 198"}});
                 }
-                default: Inst::UD2();
+                default: M5InternalError::error({{"./decoder/x87.isa 200"}});
             }
             0x5: decode MODRM_MOD {
                 // 'R' insists on having a size qualifier, so I picked 'q',
@@ -208,10 +212,10 @@ format WarnUnimpl {
             }
             0x6: decode MODRM_MOD {
                 0x3: fcomi();
-                default: Inst::UD2();
+                default: M5InternalError::error({{"./decoder/x87.isa 211"}});
             }
             0x7: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 214"}});
                 default: Inst::FST80P(M);
             }
         }
@@ -226,11 +230,11 @@ format WarnUnimpl {
                 default: Inst::FMUL2(Mq);
             }
             0x2: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 229"}});
                 default: fcom();
             }
             0x3: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 233"}});
                 default: fcomp();
             }
             0x4: decode MODRM_MOD {
@@ -258,7 +262,7 @@ format WarnUnimpl {
                 default: Inst::FLD(Mq);
             }
             0x1: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 261"}});
                 default: fisttp();
             }
             0x2: decode MODRM_MOD {
@@ -275,14 +279,14 @@ format WarnUnimpl {
             }
             0x5: decode MODRM_MOD {
                 0x3: fucomp();
-                default: Inst::UD2();
+                default: M5InternalError::error({{"./decoder/x87.isa 278"}});
             }
             0x6: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 281"}});
                 default: fnsave();
             }
             0x7: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 285"}});
                 default: Inst::FNSTSW(Mw);
             }
         }
@@ -300,13 +304,14 @@ format WarnUnimpl {
                 default: fimul();
             }
             0x2: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 303"}});
                 default: ficom();
             }
             0x3: decode MODRM_MOD {
                 0x3: decode MODRM_RM {
                     0x1: fcompp();
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/x87.isa 309"}});
                 }
                 default: ficomp();
             }
@@ -339,21 +344,22 @@ format WarnUnimpl {
                 default: Inst::FILD(Mw); // 16-bit int
             }
             0x1: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 342"}});
                 default: fisttp();
             }
             0x2: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 346"}});
                 default: fist();
             }
             0x3: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 350"}});
                 default: fistp();
             }
             0x4: decode MODRM_MOD {
                 0x3: decode MODRM_RM {
                     0x0: Inst::FNSTSW(rAw);
-                    default: Inst::UD2();
+                    default: M5InternalError::error(
+                        {{"./decoder/x87.isa 356"}});
                 }
                 default: fbld();
             }
@@ -368,7 +374,7 @@ format WarnUnimpl {
                 default: fbstp();
             }
             0x7: decode MODRM_MOD {
-                0x3: Inst::UD2();
+                0x3: M5InternalError::error({{"./decoder/x87.isa 371"}});
                 default: fistp();
             }
         }

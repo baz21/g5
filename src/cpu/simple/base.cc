@@ -67,6 +67,7 @@
 #include "cpu/smt.hh"
 #include "cpu/static_inst.hh"
 #include "cpu/thread_context.hh"
+#include "debug/BaseSimpleCPU.hh"
 #include "debug/Decode.hh"
 #include "debug/Fetch.hh"
 #include "debug/Quiesce.hh"
@@ -118,7 +119,8 @@ BaseSimpleCPU::BaseSimpleCPU(BaseSimpleCPUParams *p)
         checker->setSystem(p->system);
         // Manipulate thread context
         ThreadContext *cpu_tc = threadContexts[0];
-        threadContexts[0] = new CheckerThreadContext<ThreadContext>(cpu_tc, this->checker);
+        threadContexts[0] = new CheckerThreadContext<ThreadContext>(
+            cpu_tc, this->checker);
     } else {
         checker = NULL;
     }
@@ -661,7 +663,59 @@ BaseSimpleCPU::postExecute()
     }
 
     // Call CPU instruction commit probes
+    probeInstCommitCPU(curStaticInst);
     probeInstCommit(curStaticInst);
+}
+
+void
+BaseSimpleCPU::regProbePoints()
+{
+    DPRINTF(BaseSimpleCPU, "XXX-BZ Registering CPU "
+        "BaseSimpleCPU::regProbePoints()\n");
+#if 0
+    ppCPUCycles =
+        new ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+        (getProbeManager(), "CPUSimpleCycles");
+#endif
+
+    ppCPURetiredInsts =
+        new ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+            (getProbeManager(), "CPUSimpleRetiredInsts");
+    ppCPURetiredLoads =
+        new ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+            (getProbeManager(), "CPUSimpleRetiredLoads");
+    ppCPURetiredStores =
+        new ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+            (getProbeManager(), "CPUSimpleRetiredStores");
+    ppCPURetiredBranches =
+        new ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+            (getProbeManager(), "CPUSimpleRetiredBranches");
+    ppCPUMispredict =
+        new ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+            (getProbeManager(), "CPUSimpleBranchMispredict");
+
+    DPRINTF(BaseSimpleCPU, "XXX-BZ Registering CPU "
+        "BaseCPU::regProbePoints()\n");
+    BaseCPU::regProbePoints();
+}
+
+void
+BaseSimpleCPU::probeInstCommitCPU(const StaticInstPtr &inst)
+{
+    SimpleExecContext &t_info = *threadInfo[curThread];
+    SimpleThread* thread = t_info.thread;
+
+    if (!inst->isMicroop() || inst->isLastMicroop())
+        ppCPURetiredInsts->notify(std::make_pair(thread, inst));
+
+    if (inst->isLoad())
+        ppCPURetiredLoads->notify(std::make_pair(thread, inst));
+
+    if (inst->isStore())
+        ppCPURetiredStores->notify(std::make_pair(thread, inst));
+
+    if (inst->isControl())
+        ppCPURetiredBranches->notify(std::make_pair(thread, inst));
 }
 
 void
@@ -700,6 +754,7 @@ BaseSimpleCPU::advancePC(const Fault &fault)
             // Mis-predicted branch
             branchPred->squash(cur_sn, thread->pcState(), branching, curThread);
             ++t_info.numBranchMispred;
+            ppCPUMispredict->notify(std::make_pair(thread, curStaticInst));
         }
     }
 }

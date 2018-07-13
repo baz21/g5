@@ -61,6 +61,7 @@
 #include "cpu/base.hh"
 #include "cpu/thread_context.hh"
 #include "debug/PageTableWalker.hh"
+#include "debug/XXXBZ.hh"
 #include "mem/packet_access.hh"
 #include "mem/request.hh"
 
@@ -74,6 +75,8 @@ Walker::start(ThreadContext * _tc, BaseTLB::Translation *_translation,
     // outstanding requests, see if this request can be coalesced with
     // another one (i.e. either coalesce or start walk)
     WalkerState * newState = new WalkerState(this, _translation, _req);
+    DPRINTF(XXXBZ, "%s: newState %#x req %#x mode %#x\n", __func__,
+        newState, _req, _mode);
     newState->initState(_tc, _mode, sys->isTimingMode());
     if (currStates.size()) {
         assert(newState->isTiming());
@@ -95,6 +98,9 @@ Fault
 Walker::startFunctional(ThreadContext * _tc, Addr &addr, unsigned &logBytes,
               BaseTLB::Mode _mode)
 {
+    DPRINTF(XXXBZ, "%s: addr %#x logBytes %#x mode %#x\n",
+        __func__, addr, logBytes, _mode);
+
     funcState.initState(_tc, _mode);
     return funcState.startFunctional(addr, logBytes);
 }
@@ -102,12 +108,14 @@ Walker::startFunctional(ThreadContext * _tc, Addr &addr, unsigned &logBytes,
 bool
 Walker::WalkerPort::recvTimingResp(PacketPtr pkt)
 {
+DPRINTF(XXXBZ, "%s: pkt %#x\n", __func__, pkt);
     return walker->recvTimingResp(pkt);
 }
 
 bool
 Walker::recvTimingResp(PacketPtr pkt)
 {
+DPRINTF(XXXBZ, "%s: pkt %#x\n", __func__, pkt);
     WalkerSenderState * senderState =
         dynamic_cast<WalkerSenderState *>(pkt->popSenderState());
     WalkerState * senderWalk = senderState->senderWalk;
@@ -136,12 +144,14 @@ Walker::recvTimingResp(PacketPtr pkt)
 void
 Walker::WalkerPort::recvReqRetry()
 {
+DPRINTF(XXXBZ, "%s:\n", __func__);
     walker->recvReqRetry();
 }
 
 void
 Walker::recvReqRetry()
 {
+DPRINTF(XXXBZ, "%s:\n", __func__);
     std::list<WalkerState *>::iterator iter;
     for (iter = currStates.begin(); iter != currStates.end(); iter++) {
         WalkerState * walkerState = *(iter);
@@ -154,6 +164,7 @@ Walker::recvReqRetry()
 bool Walker::sendTiming(WalkerState* sendingState, PacketPtr pkt)
 {
     WalkerSenderState* walker_state = new WalkerSenderState(sendingState);
+DPRINTF(XXXBZ, "%s: walker_state %#x pkt %#x\n", __func__, walker_state, pkt);
     pkt->pushSenderState(walker_state);
     if (port.sendTimingReq(pkt)) {
         return true;
@@ -185,11 +196,13 @@ Walker::WalkerState::initState(ThreadContext * _tc,
     tc = _tc;
     mode = _mode;
     timing = _isTiming;
+DPRINTF(XXXBZ, "%s: tc %#x mode %#x timing %#x\n", __func__, tc, mode, timing);
 }
 
 void
 Walker::startWalkWrapper()
 {
+DPRINTF(XXXBZ, "%s:\n", __func__);
     unsigned num_squashed = 0;
     WalkerState *currState = currStates.front();
     while ((num_squashed < numSquashable) && currState &&
@@ -221,6 +234,7 @@ Walker::startWalkWrapper()
 Fault
 Walker::WalkerState::startWalk()
 {
+DPRINTF(XXXBZ, "%s:%d:\n", __func__, __LINE__);
     Fault fault = NoFault;
     assert(!started);
     started = true;
@@ -229,8 +243,10 @@ Walker::WalkerState::startWalk()
         nextState = state;
         state = Waiting;
         timingFault = NoFault;
+DPRINTF(XXXBZ, "%s:%d:\n", __func__, __LINE__);
         sendPackets();
     } else {
+DPRINTF(XXXBZ, "%s:%d:\n", __func__, __LINE__);
         do {
             walker->port.sendAtomic(read);
             PacketPtr write = NULL;
@@ -253,6 +269,8 @@ Walker::WalkerState::startFunctional(Addr &addr, unsigned &logBytes)
     Fault fault = NoFault;
     assert(!started);
     started = true;
+    DPRINTF(XXXBZ, "%s:%d: addr %#x logBytes %#x\n",
+        __func__, __LINE__, addr, logBytes);
     setupWalk(addr);
 
     do {
@@ -289,6 +307,8 @@ Walker::WalkerState::stepWalk(PacketPtr &write)
     bool doTLBInsert = false;
     bool doEndWalk = false;
     bool badNX = pte.nx && mode == BaseTLB::Execute && enableNX;
+    DPRINTF(XXXBZ, "%s:%d: pte %#x vaddr %#x badNX %#x\n",
+        __func__, __LINE__, pte, vaddr, badNX);
     switch(state) {
       case LongPML4:
         DPRINTF(PageTableWalker,
@@ -328,6 +348,10 @@ Walker::WalkerState::stepWalk(PacketPtr &write)
         pte.a = 1;
         entry.writable = entry.writable && pte.w;
         entry.user = entry.user && pte.u;
+        if (vaddr == 0xfffffe0000400000)
+            DPRINTF(XXXBZ, "%s:%d: pte %#x a %#x u %#x w %#x p %#x ps %#x "
+                "g %#x\n", __func__, __LINE__,
+                pte, pte.a, pte.u, pte.w, pte.p, pte.ps, pte.g);
         if (badNX || !pte.p) {
             doEndWalk = true;
             fault = pageFault(pte.p);
@@ -339,6 +363,10 @@ Walker::WalkerState::stepWalk(PacketPtr &write)
             nextRead =
                 ((uint64_t)pte & (mask(40) << 12)) + vaddr.longl1 * dataSize;
             nextState = LongPTE;
+            if (vaddr == 0xfffffe0000400000 || nextRead == 0xfffffe0000400000)
+                DPRINTF(XXXBZ, "%s:%d: pte %#x nextState LongPTE "
+                    "nextRead %#x vaddr %#x entry.logBytes %#x\n",
+                    __func__, __LINE__, pte, nextRead, vaddr, entry.logBytes);
             break;
         } else {
             // 2 MB page
@@ -350,6 +378,12 @@ Walker::WalkerState::stepWalk(PacketPtr &write)
             entry.vaddr = entry.vaddr & ~((2 * (1 << 20)) - 1);
             doTLBInsert = true;
             doEndWalk = true;
+            if (vaddr == 0xfffffe0000400000 ||
+                entry.vaddr == 0xfffffe0000400000)
+                DPRINTF(XXXBZ, "%s:%d: pte %#x doTLBInsert %#x doEndWalk %#x "
+                    "vaddr %#x entry.vaddr %#x entry.logBytes %#x\n",
+                    __func__, __LINE__, pte, doTLBInsert, doEndWalk,
+                    vaddr, entry.vaddr, entry.logBytes);
             break;
         }
       case LongPTE:
@@ -506,8 +540,10 @@ Walker::WalkerState::stepWalk(PacketPtr &write)
     }
     if (doEndWalk) {
         if (doTLBInsert)
-            if (!functional)
-                walker->tlb->insert(entry.vaddr, entry);
+            if (!functional) {
+                VAddr vai = req ? req->getVaddr() : entry.vaddr;
+                walker->tlb->insert(vai, entry, tc);
+            }
         endWalk();
     } else {
         PacketPtr oldRead = read;
@@ -516,15 +552,23 @@ Walker::WalkerState::stepWalk(PacketPtr &write)
         flags.set(Request::UNCACHEABLE, uncacheable);
         RequestPtr request = std::make_shared<Request>(
             nextRead, oldRead->getSize(), flags, walker->masterId);
-        read = new Packet(request, MemCmd::ReadReq);
+        PacketPtr newRead = new Packet(request, MemCmd::ReadReq);
+        DPRINTF(XXXBZ, "%s:%d: overwriting read %#x with %#x\n",
+            __func__, __LINE__, read, newRead);
+        read = newRead;
         read->allocate();
         // If we need to write, adjust the read packet to write the modified
         // value back to memory.
         if (doWrite) {
+            DPRINTF(XXXBZ, "%s:%d: making oldRead req %#x read %#x "
+                "overwriting write %#x\n", __func__, __LINE__,
+                oldRead->req, oldRead, write);
             write = oldRead;
             write->set<uint64_t>(pte);
             write->cmd = MemCmd::WriteReq;
         } else {
+            DPRINTF(XXXBZ, "%s:%d: deleting oldRead req %#x read %#x\n",
+                __func__, __LINE__, oldRead->req, oldRead);
             write = NULL;
             delete oldRead;
         }
@@ -535,8 +579,11 @@ Walker::WalkerState::stepWalk(PacketPtr &write)
 void
 Walker::WalkerState::endWalk()
 {
+    DPRINTF(XXXBZ, "%s:%d: req %#x read %#x\n", __func__, __LINE__,
+        read->req, read);
     nextState = Ready;
     delete read;
+    DPRINTF(XXXBZ, "%s:%d: clearing read to NULL\n", __func__, __LINE__);
     read = NULL;
 }
 
@@ -549,6 +596,8 @@ Walker::WalkerState::setupWalk(Addr vaddr)
     Efer efer = tc->readMiscRegNoEffect(MISCREG_EFER);
     dataSize = 8;
     Addr topAddr;
+    DPRINTF(XXXBZ, "%s:%d: vaddr %#x efer %#x\n",
+        __func__, __LINE__, vaddr, efer);
     if (efer.lma) {
         // Do long mode.
         state = LongPML4;
@@ -586,7 +635,16 @@ Walker::WalkerState::setupWalk(Addr vaddr)
     RequestPtr request = std::make_shared<Request>(
         topAddr, dataSize, flags, walker->masterId);
 
-    read = new Packet(request, MemCmd::ReadReq);
+    if (read != NULL) {
+        DPRINTF(PageTableWalker, "%s allocating new read with old read %#x "
+            "not NULL, vaddr %#x enableNX %d state %#x nS %#x topAddr %#x "
+            "masterID %#x mode %#x\n", __func__, read, vaddr, enableNX,
+            state, nextState, topAddr, walker->masterId, mode);
+    }
+    PacketPtr newRead = new Packet(request, MemCmd::ReadReq);
+    DPRINTF(XXXBZ, "%s:%d: overwriting read %#x with %#x\n",
+         __func__, __LINE__, read, newRead);
+    read = newRead;
     read->allocate();
 }
 
@@ -596,10 +654,12 @@ Walker::WalkerState::recvPacket(PacketPtr pkt)
     assert(pkt->isResponse());
     assert(inflight);
     assert(state == Waiting);
+    DPRINTF(XXXBZ, "%s:%d: pkt %#x inflight %#x\n",
+        __func__, __LINE__, pkt, inflight);
     inflight--;
     if (pkt->isRead()) {
-        // should not have a pending read it we also had one outstanding
-        assert(!read);
+        // should not have a pending read if we also had one outstanding
+        assert(read == NULL);
 
         // @todo someone should pay for this
         pkt->headerDelay = pkt->payloadDelay = 0;
@@ -607,6 +667,8 @@ Walker::WalkerState::recvPacket(PacketPtr pkt)
         state = nextState;
         nextState = Ready;
         PacketPtr write = NULL;
+        DPRINTF(XXXBZ, "%s:%d: overwriting read %#x with %#x\n",
+             __func__, __LINE__, read, pkt);
         read = pkt;
         timingFault = stepWalk(write);
         state = Waiting;
@@ -614,10 +676,8 @@ Walker::WalkerState::recvPacket(PacketPtr pkt)
         if (write) {
             writes.push_back(write);
         }
-        sendPackets();
-    } else {
-        sendPackets();
     }
+    sendPackets();
     if (inflight == 0 && read == NULL && writes.size() == 0) {
         state = Ready;
         nextState = Waiting;
@@ -629,14 +689,20 @@ Walker::WalkerState::recvPacket(PacketPtr pkt)
              * permissions violations, so we'll need the return value as
              * well.
              */
-            bool delayedResponse;
+            bool delayedResponse = true;
+            DPRINTF(XXXBZ, "delayedResponse 1: %d %#x mode %#x\n",
+                delayedResponse, req, mode);
             Fault fault = walker->tlb->translate(req, tc, NULL, mode,
                                                  delayedResponse, true);
+            DPRINTF(XXXBZ, "delayedResponse 2: %d %#x mode %#x\n",
+                delayedResponse, req, mode);
             assert(!delayedResponse);
             // Let the CPU continue.
             translation->finish(fault, req, tc, mode);
         } else {
             // There was a fault during the walk. Let the CPU know.
+            DPRINTF(XXXBZ, "%s timingFault %#x: req %#x mode %x\n",
+                __func__, timingFault, req, mode);
             translation->finish(timingFault, req, tc, mode);
         }
         return true;
@@ -648,6 +714,8 @@ Walker::WalkerState::recvPacket(PacketPtr pkt)
 void
 Walker::WalkerState::sendPackets()
 {
+    DPRINTF(XXXBZ, "%s:%d: retrying %#x read %#x\n",
+        __func__, __LINE__, retrying, read);
     //If we're already waiting for the port to become available, just return.
     if (retrying)
         return;
@@ -656,9 +724,13 @@ Walker::WalkerState::sendPackets()
     if (read) {
         PacketPtr pkt = read;
         read = NULL;
+        DPRINTF(XXXBZ, "%s:%d: overwriting read %#x with NULL\n",
+            __func__, __LINE__, read);
         inflight++;
         if (!walker->sendTiming(this, pkt)) {
             retrying = true;
+            DPRINTF(XXXBZ, "%s:%d: overwriting read %#x with %#x\n",
+                __func__, __LINE__, read, pkt);
             read = pkt;
             inflight--;
             return;
@@ -699,6 +771,7 @@ Walker::WalkerState::wasStarted()
 void
 Walker::WalkerState::retry()
 {
+DPRINTF(XXXBZ, "%s:%d: retrying %#x\n", __func__, __LINE__, retrying);
     retrying = false;
     sendPackets();
 }
@@ -706,12 +779,17 @@ Walker::WalkerState::retry()
 Fault
 Walker::WalkerState::pageFault(bool present)
 {
-    DPRINTF(PageTableWalker, "Raising page fault.\n");
     HandyM5Reg m5reg = tc->readMiscRegNoEffect(MISCREG_M5_REG);
-    if (mode == BaseTLB::Execute && !enableNX)
+    DPRINTF(PageTableWalker, "Raising page fault: preset %d "
+        "m5reg %#x.\n", present, m5reg);
+#if 0
+    if (present && mode == BaseTLB::Execute && enableNX)
         mode = BaseTLB::Read;
-    return std::make_shared<PageFault>(entry.vaddr, present, mode,
-                                       m5reg.cpl == 3, false);
+#endif
+    // XXX the !enableNX will also need a SMEP check once gem5 supports it.
+    return std::make_shared<PageFault>(entry.vaddr, present,
+        (mode == BaseTLB::Execute && !enableNX) ? BaseTLB::Read : mode,
+        m5reg.cpl == 3, false);
 }
 
 /* end namespace X86ISA */ }

@@ -482,6 +482,15 @@ let {{
     decoder_output += BasicConstructor.subst(m5breakIop)
     exec_output += PredOpExecute.subst(m5breakIop)
 
+    m5toggleTracingIop = InstObjParams("m5toggleTracing", "M5toogleTracing",
+        "PredOp",
+        { "code": "PseudoInst::toggleTracing(xc->tcBase());",
+          "predicate_test": predicateTest },
+          ["IsNonSpeculative"])
+    header_output += BasicDeclare.subst(m5toggleTracingIop)
+    decoder_output += BasicConstructor.subst(m5toggleTracingIop)
+    exec_output += PredOpExecute.subst(m5toggleTracingIop)
+
     m5switchcpuIop = InstObjParams("m5switchcpu", "M5switchcpu", "PredOp",
                            { "code": "PseudoInst::switchcpu(xc->tcBase());",
                              "predicate_test": predicateTest },

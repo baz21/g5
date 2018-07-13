@@ -40,3 +40,12 @@ from Probe import *
 class SimpleTrace(ProbeListenerObject):
     type = 'SimpleTrace'
     cxx_header = 'cpu/o3/probe/simple_trace.hh'
+
+class SimpleTraceTLB(ProbeListenerObject):
+    type = 'SimpleTraceTLB'
+    cxx_header = 'cpu/o3/probe/simple_trace_tlb.hh'
+
+class SimpleTraceCACHE(ProbeListenerObject):
+    type = 'SimpleTraceCACHE'
+    cxx_header = 'cpu/o3/probe/simple_trace_cache.hh'
+

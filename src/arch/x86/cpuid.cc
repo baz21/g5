@@ -70,7 +70,11 @@ namespace X86ISA {
     };
 
     static const int vendorStringSize = 13;
+#if 0
     static const char vendorString[vendorStringSize] = "M5 Simulator";
+    static const char vendorString[vendorStringSize] = "AuthenticAMD";
+#endif
+    static const char vendorString[vendorStringSize] = "GenuineIntel";
     static const int nameStringSize = 48;
     static const char nameString[nameStringSize] = "Fake M5 x86_64 CPU";
 
@@ -103,7 +107,8 @@ namespace X86ISA {
                         stringToRegister(vendorString + 8));
                 break;
               case FamilyModelSteppingBrandFeatures:
-                result = CpuidResult(0x00020f51, 0x00000405,
+                // Intel Sandybridge Xeon
+                result = CpuidResult(0x00020fd1, 0x00000005,
                                      0xe3d3fbff, 0x00000001);
                 break;
               case NameString1:
@@ -161,8 +166,8 @@ namespace X86ISA {
                         stringToRegister(vendorString + 8));
                 break;
               case FamilyModelStepping:
-                result = CpuidResult(0x00020f51, 0x00000805,
-                                     0xe7dbfbff, 0x04000209);
+                result = CpuidResult(0x00020fd1, 0x00000005,
+                                     0xe7dbfbff, 0x00000001);
                 break;
               case ExtendedFeatures:
                 result = CpuidResult(0x00000000, 0x01800000,

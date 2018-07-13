@@ -41,11 +41,11 @@
 
 / {
 	model = "V2P-CA15";
-	compatible = "arm,vexpress,v2p-ca15,tc1", "arm,vexpress,v2p-ca15", "arm,vexpress";
+	compatible = "arm,vexpress,v2p-ca15,tc1", "arm,vexpress,v2p-ca15", "arm,vexpress", "gem5,arm,vexpress";
 
 	memory@80000000 {
 		device_type = "memory";
-		reg = <0 0x80000000 0x4 0x00000000>;
+		reg = <0 0x80000000 0x0 0x40000000>;
 	};
 
 	cpus {

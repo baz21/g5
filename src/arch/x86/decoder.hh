@@ -307,7 +307,11 @@ class Decoder
     //when there is control flow.
     void moreBytes(const PCState &pc, Addr fetchPC, MachInst data)
     {
-        DPRINTF(Decoder, "Getting more bytes.\n");
+        DPRINTF(Decoder, "Getting more bytes: pc.instAddr %#x pc.size %#x "
+            "fetchPC %#x data %#x; OLD basePC %#x origPC %#x chunkIdx %d "
+            "offset %d fetchChunk %#x outOfBytes %d\n",
+            pc.instAddr(), pc.size(), fetchPC, data,
+            basePC, origPC, chunkIdx, offset, fetchChunk, outOfBytes);
         basePC = fetchPC;
         offset = (fetchPC >= pc.instAddr()) ? 0 : pc.instAddr() - fetchPC;
         fetchChunk = data;

@@ -55,17 +55,20 @@
         ret
 .endm
 #else
-.macro	m5op_func, name, func, subfunc
-        .globl \name
-        \name:
-        .long 0xff000110 | (\func << 16) | (\subfunc << 12)
-        ret
-.endm
+#define ENTRY(sym)                                              \
+        .text; .globl sym; .align 2; .type sym,#function; sym:
+#define END(sym) .size sym, . - sym
 #endif
 
-.text
-#define M5OP(name, func, subfunc) m5op_func name, func, subfunc
+#define M5OP_FUNC(sym, _func, _subfunc)                         \
+ENTRY(sym)                                                      \
+        .long 0xff000110 | (_func << 16) | (_subfunc << 12);    \
+        ret;                                                    \
+END(sym)
+
+#define M5OP(name, func, subfunc) M5OP_FUNC(name, func, subfunc)
         M5OP_FOREACH
 
-#define M5_ANNOTATION(name, ann) m5op_func name, M5OP_ANNOTATE, ann
+#define M5_ANNOTATION(name, ann) M5OP_FUNC(name, annotate_func, ann)
         M5OP_FOREACH_ANNOTATION
+

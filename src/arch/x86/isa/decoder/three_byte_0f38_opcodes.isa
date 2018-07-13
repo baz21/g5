@@ -79,13 +79,15 @@
             0x3F: pmaxud_Vdq_Wdq();
             0x40: pmulld_Vdq_Wdq();
             0x41: phminposuw_Vdq_Wdq();
-            default: Inst::UD2();
+            default: M5InternalError::error(
+                {{"./decoder/three_byte_0f38_opcodes.isa 82"}});
         }
         default: decode LEGACY_REPNE {
             1: decode OPCODE_OP {
                 0xF0: crc32_Gd_Eb();
                 0xF1: crc32_Gd_Ev();
-                default: Inst::UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/three_byte_0f38_opcodes.isa 88"}});
             }
             default: decode OPCODE_OP {
                 0x00: pshufb_Pq_Qq();
@@ -103,7 +105,8 @@
                 0x1C: pabsb_Pq_Qq();
                 0x1D: pabsw_Pq_Qq();
                 0x1E: pabsd_Pq_Qq();
-                default: Inst::UD2();
+                default: M5InternalError::error(
+                    {{"./decoder/three_byte_0f38_opcodes.isa 106"}});
             }
         }
     }

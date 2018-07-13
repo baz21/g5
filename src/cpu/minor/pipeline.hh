@@ -131,6 +131,8 @@ class Pipeline : public Ticked
     /** Stats registering */
     void regStats();
 
+    void regProbePoints();
+
     /** Functions below here are BaseCPU operations passed on to pipeline
      *  stages */
 

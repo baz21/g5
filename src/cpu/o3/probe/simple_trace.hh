@@ -48,6 +48,7 @@
 
 #include "cpu/o3/dyn_inst.hh"
 #include "cpu/o3/impl.hh"
+#include "cpu/static_inst_fwd.hh"
 #include "params/SimpleTrace.hh"
 #include "sim/probe/probe.hh"
 
@@ -68,6 +69,15 @@ class SimpleTrace : public ProbeListenerObject {
   private:
     void traceFetch(const O3CPUImpl::DynInstPtr &dynInst);
     void traceCommit(const O3CPUImpl::DynInstPtr &dynInst);
+    void traceMispredict(const O3CPUImpl::DynInstPtr &dynInst);
+
+#if 0
+    void traceCyclesO3(const O3CPUImpl::DynInstPtr &inst);
+#endif
+    void traceRetiredInstsO3(const O3CPUImpl::DynInstPtr &inst);
+    void traceRetiredLoadsO3(const O3CPUImpl::DynInstPtr &inst);
+    void traceRetiredStoresO3(const O3CPUImpl::DynInstPtr &inst);
+    void traceRetiredBranchesO3(const O3CPUImpl::DynInstPtr &inst);
 
 };
 #endif//__CPU_O3_PROBE_SIMPLE_TRACE_HH__

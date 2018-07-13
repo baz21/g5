@@ -266,6 +266,9 @@ class MinorDynInst : public RefCounted
     /** ReportIF interface */
     void reportData(std::ostream &os) const;
 
+    /** Read the PC of this instruction. */
+    Addr instAddr() const { return pc.instAddr(); }
+
     ~MinorDynInst();
 };
 

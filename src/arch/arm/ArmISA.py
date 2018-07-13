@@ -53,8 +53,9 @@ class ArmISA(SimObject):
 
     system = Param.System(Parent.any, "System this ISA object belongs to")
 
-    pmu = Param.ArmPMU(NULL, "Performance Monitoring Unit")
-    decoderFlavour = Param.DecoderFlavour('Generic', "Decoder flavour specification")
+    pmu = Param.ArmPMU(ArmPMU(), "Performance Monitoring Unit")
+    decoderFlavour = Param.DecoderFlavour('Generic', \
+        "Decoder flavour specification")
 
     midr = Param.UInt32(0x410fc0f0, "MIDR value")
 

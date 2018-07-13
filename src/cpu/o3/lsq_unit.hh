@@ -674,6 +674,14 @@ LSQUnit<Impl>::read(const RequestPtr &req,
             // Get shift amount for offset into the store's data.
             int shift_amt = req->getVaddr() - storeQueue[store_idx].inst->effAddr;
 
+            if (req->getVaddr() == 0xffffffffffffffff)
+                DPRINTF(LSQUnit, "%s:%d shift_amt %d req %#x getVaddr %#x "
+                    "store_idx %#x effAddr %#x load_inst %#x isAllZeros %d "
+                    "getSize %#x\n", __func__, __LINE__,
+                    shift_amt, req, req->getVaddr(), store_idx,
+                    storeQueue[store_idx].inst->effAddr, load_inst,
+                    storeQueue[store_idx].isAllZeros, req->getSize());
+
             // Allocate memory if this is the first time a load is issued.
             if (!load_inst->memData) {
                 load_inst->memData = new uint8_t[req->getSize()];

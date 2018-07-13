@@ -46,7 +46,8 @@ GEN_DTS=mkdir -p .gen; \
 		$(DTC_CPP_FLAGS) \
 		-DCONF_PLATFORM=\"platforms/$(1)\" \
 		-DCONF_CPUS=$(2) \
-		-o $@ $<
+		-o $@ $<; \
+	cp -p $@ $@.bz
 
 all: $(TARGETS)
 
@@ -67,5 +68,5 @@ platforms/vexpress_gem5_v1.dtsi: platforms/vexpress_gem5_v1_base.dtsi
 
 
 clean:
-	$(RM) -r .gen
+	#$(RM) -r .gen
 	$(RM) *.dtb

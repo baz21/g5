@@ -36,6 +36,10 @@
 #include "sim/full_system.hh"
 #include "sim/process.hh"
 
+const char * const BaseTLB::ModeName[] = {
+        "Read", "Write", "Execute"
+};
+
 Fault
 GenericTLB::translateAtomic(const RequestPtr &req, ThreadContext *tc, Mode)
 {

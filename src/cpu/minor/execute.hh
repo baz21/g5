@@ -49,6 +49,7 @@
 
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/cpu.hh"
+#include "cpu/minor/dyn_inst.hh"
 #include "cpu/minor/func_unit.hh"
 #include "cpu/minor/lsq.hh"
 #include "cpu/minor/pipe_data.hh"
@@ -350,6 +351,11 @@ class Execute : public Named
     /** Like the drain interface on SimObject */
     unsigned int drain();
     void drainResume();
+
+    void regProbePoints();
+
+  private:
+    ProbePointArg<Minor::MinorDynInstPtr> *ppCPUMispredict;
 };
 
 }

@@ -127,6 +127,8 @@ def parse_options():
         help="Print help on debug flags")
     option("--debug-flags", metavar="FLAG[,FLAG]", action='append', split=',',
         help="Sets the flags for debug output (-FLAG disables a flag)")
+    option("--debug-disable", action="store_true", default=False,
+        help="Start with the debug options disabled")
     option("--debug-start", metavar="TICK", type='int',
         help="Start debug output at TICK")
     option("--debug-end", metavar="TICK", type='int',
@@ -396,6 +398,9 @@ def main(*args):
         check_tracing()
         e = event.create(trace.disable, event.Event.Debug_Enable_Pri)
         event.mainq.schedule(e, options.debug_end)
+
+    if options.debug_disable:
+        trace.toggle()
 
     trace.output(options.debug_file)
 

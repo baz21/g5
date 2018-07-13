@@ -114,6 +114,16 @@ SimpleFlag::disableAll()
 }
 
 void
+SimpleFlag::toggleAll()
+{
+
+    _active = !_active;
+    warn("XXX-BZ toggling tracing to %s\n", _active ? "active" : "inactive");
+    for (auto& i : allFlags())
+        i.second->sync();
+}
+
+void
 CompoundFlag::enable()
 {
     for (auto& k : _kids)
@@ -125,6 +135,13 @@ CompoundFlag::disable()
 {
     for (auto& k : _kids)
         k->disable();
+}
+
+void
+CompoundFlag::toggle()
+{
+    for (auto& k : _kids)
+        k->toggle();
 }
 
 struct AllFlags : public Flag
@@ -151,6 +168,16 @@ struct AllFlags : public Flag
         for (; i != end; ++i)
             if (i->second != this)
                 i->second->disable();
+    }
+
+    void
+    toggle()
+    {
+        FlagsMap::iterator i = allFlags().begin();
+        FlagsMap::iterator end = allFlags().end();
+        for (; i != end; ++i)
+            if (i->second != this)
+                i->second->toggle();
     }
 };
 

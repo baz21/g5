@@ -119,6 +119,7 @@ void setDebugLogger(Logger *logger);
 /** Enable/disable debug logging */
 void enable();
 void disable();
+void toggle();
 
 } // namespace Trace
 

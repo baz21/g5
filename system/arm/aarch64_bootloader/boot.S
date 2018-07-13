@@ -40,6 +40,10 @@
 
         .globl	_start
 _start:
+        mov	x8, x0
+        mov	x9, x1
+        mov	x10, x2
+
         /*
          * EL3 initialisation
          */
@@ -153,8 +157,13 @@ start_ns:
         /*
          * Primary CPU
          */
-        ldr	x0, =PHYS_OFFSET + 0x8000000	 // device tree blob
-        ldr     x6, =PHYS_OFFSET + 0x80000       // kernel start address
+        //ldr	x0, =PHYS_OFFSET + 0x8000000	 // device tree blob
+        ldr     x6, =PHYS_OFFSET + 0x1000       // kernel start address
+
+        mov	x2, x10
+        mov	x1, x9
+        mov	x0, x8
+
         br	x6
 
         .ltorg

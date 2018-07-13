@@ -61,6 +61,7 @@
 #include "debug/Drain.hh"
 #include "debug/O3CPU.hh"
 #include "debug/Quiesce.hh"
+#include "debug/SimpleTrace.hh"
 #include "enums/MemoryMode.hh"
 #include "sim/core.hh"
 #include "sim/full_system.hh"
@@ -427,13 +428,48 @@ FullO3CPU<Impl>::regProbePoints()
 {
     BaseCPU::regProbePoints();
 
-    ppInstAccessComplete = new ProbePointArg<PacketPtr>(getProbeManager(), "InstAccessComplete");
-    ppDataAccessComplete = new ProbePointArg<std::pair<DynInstPtr, PacketPtr> >(getProbeManager(), "DataAccessComplete");
+    DPRINTF(SimpleTrace, "XXX-BZ FullO3CPU<Impl>::regProbePoints()\n");
+
+    ppInstAccessComplete = new ProbePointArg<PacketPtr>
+        (getProbeManager(), "InstAccessComplete");
+    ppDataAccessComplete = new ProbePointArg<std::pair<DynInstPtr, PacketPtr>>
+        (getProbeManager(), "DataAccessComplete");
+
+#if 0
+    ppCPUCycles = new ProbePointArg<DynInstPtr>
+        (getProbeManager(), "CPUO3Cycles");
+#endif
+
+    ppCPURetiredInsts = new ProbePointArg<DynInstPtr>
+        (getProbeManager(), "CPUO3RetiredInsts");
+    ppCPURetiredLoads = new ProbePointArg<DynInstPtr>
+        (getProbeManager(), "CPUO3RetiredLoads");
+    ppCPURetiredStores = new ProbePointArg<DynInstPtr>
+        (getProbeManager(), "CPUO3RetiredStores");
+    ppCPURetiredBranches = new ProbePointArg<DynInstPtr>
+        (getProbeManager(), "CPUO3RetiredBranches");
 
     fetch.regProbePoints();
     rename.regProbePoints();
     iew.regProbePoints();
     commit.regProbePoints();
+}
+
+template <class Impl>
+void
+FullO3CPU<Impl>::probeInstCommitCPU(const DynInstPtr &inst)
+{
+    if (!inst->staticInst->isMicroop() || inst->staticInst->isLastMicroop())
+        ppCPURetiredInsts->notify(inst);
+
+    if (inst->staticInst->isLoad())
+        ppCPURetiredLoads->notify(inst);
+
+    if (inst->staticInst->isStore())
+        ppCPURetiredStores->notify(inst);
+
+    if (inst->staticInst->isControl())
+        ppCPURetiredBranches->notify(inst);
 }
 
 template <class Impl>
@@ -1590,6 +1626,7 @@ FullO3CPU<Impl>::instDone(ThreadID tid, DynInstPtr &inst)
     thread[tid]->numOps++;
     committedOps[tid]++;
 
+    probeInstCommitCPU(inst);
     probeInstCommit(inst->staticInst);
 }
 

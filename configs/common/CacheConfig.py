@@ -48,9 +48,11 @@ from m5.objects import *
 from Caches import *
 
 def config_cache(options, system):
-    if options.external_memory_system and (options.caches or options.l2cache):
-        print("External caches and internal caches are exclusive options.\n")
-        sys.exit(1)
+    if options.external_memory_system and (options.caches or options.l2cache
+        or options.l3cache):
+            print("External caches and internal caches are exclusive "
+                "options.\n")
+            sys.exit(1)
 
     if options.external_memory_system:
         ExternalCache = ExternalCacheFactory(options.external_memory_system)
@@ -61,48 +63,121 @@ def config_cache(options, system):
         except:
             print("O3_ARM_v7a_3 is unavailable. Did you compile the O3 model?")
             sys.exit(1)
+        if options.l3cache:
+            print "arm_detailed does not yet support L3 cache"
+            sys.exit(1)
 
-        dcache_class, icache_class, l2_cache_class, walk_cache_class = \
-            O3_ARM_v7a_DCache, O3_ARM_v7a_ICache, O3_ARM_v7aL2, \
-            O3_ARM_v7aWalkCache
+        dcache_class, icache_class = O3_ARM_v7a_DCache, O3_ARM_v7a_ICache
+        l2_cache_class, l3_cache_class = O3_ARM_v7aL2, O3_ARM_v7aL3
+        walk_cache_class = O3_ARM_v7aWalkCache
     else:
-        dcache_class, icache_class, l2_cache_class, walk_cache_class = \
-            L1_DCache, L1_ICache, L2Cache, None
+        dcache_class, icache_class, l2_cache_class, l3_cache_class = \
+            L1_DCache, L1_ICache, L2Cache, L3Cache
+        walk_cache_class = None
 
         if buildEnv['TARGET_ISA'] == 'x86':
             walk_cache_class = PageTableWalkerCache
 
+    if options.cache_config is not None:
+        try:
+            from importlib import import_module
+            #from options.cache_config import *
+            ccmod = import_module(options.cache_config)
+        except:
+            print "%s cache config failed to load" % (options.cache_config)
+            raise
+            #sys.exit(1)
+
+        dcache_class, icache_class, l2_cache_class, l3_cache_class = \
+            getattr(ccmod, options.cache_config + "_DCache"), \
+            getattr(ccmod, options.cache_config +"_ICache"), \
+            getattr(ccmod, options.cache_config + "_L2"), \
+            getattr(ccmod, options.cache_config +"_L3")
+
     # Set the cache line size of the system
-    system.cache_line_size = options.cacheline_size
+    if options.cacheline_size is not None:
+        system.cache_line_size = options.cacheline_size
 
     # If elastic trace generation is enabled, make sure the memory system is
     # minimal so that compute delays do not include memory access latencies.
     # Configure the compulsory L1 caches for the O3CPU, do not configure
     # any more caches.
-    if options.l2cache and options.elastic_trace_en:
-        fatal("When elastic trace is enabled, do not configure L2 caches.")
+    if (options.l3cache or options.l2cache) and options.elastic_trace_en:
+        fatal("When elastic trace is enabled, do not configure L2/3 caches.")
+
+    if options.l3cache:
+        if buildEnv['TARGET_ISA'] == 'x86':
+            system.l3cache = l3_cache_class(clk_domain=system.cpu_clk_domain)
+                                   # tag_latency = 0,
+                                   # data_latency = 0,
+                                   # response_latency=0)
+            system.tol3bus = L3XBar(clk_domain = system.cpu_clk_domain) #,
+                                   # frontend_latency = 0,
+                                   # forward_latency = 0,
+                                   # response_latency = 0,
+                                   # snoop_response_latency = 0
+                                   # )
+                                     #width = 32)
+        else:
+            system.l3cache = l3_cache_class(clk_domain=system.cpu_clk_domain)
+            system.tol3bus = L3XBar(clk_domain = system.cpu_clk_domain)
+        if options.l3_size is not None:
+            system.l3cache.size=options.l3_size,
+        if options.l3_assoc is not None:
+            system.l3cache.assoc=options.l3_assoc,
+        system.l3cache.cpu_side = system.tol3bus.master
+        system.l3cache.mem_side = system.membus.slave
 
     if options.l2cache:
         # Provide a clock for the L2 and the L1-to-L2 bus here as they
         # are not connected using addTwoLevelCacheHierarchy. Use the
         # same clock as the CPUs.
-        system.l2 = l2_cache_class(clk_domain=system.cpu_clk_domain,
-                                   size=options.l2_size,
-                                   assoc=options.l2_assoc)
+        if buildEnv['TARGET_ISA'] == 'x86':
+            wbc = False
+            if options.l3cache:
+                wbc = True
+            system.l2cache = l2_cache_class(clk_domain=system.cpu_clk_domain)
+                                   # tag_latency = 0,
+                                   # data_latency = 0,
+                                   # response_latency=0,
+                                   # writeback_clean=wbc)
+            system.tol2bus = L2XBar(clk_domain = system.cpu_clk_domain) #,
+                                   #frontend_latency = 0,
+                                   #forward_latency = 0,
+                                   #response_latency = 0,
+                                   #snoop_response_latency = 0
+                                   #)
+        else:
+            system.l2cache = l2_cache_class(clk_domain=system.cpu_clk_domain)
+            system.tol2bus = L2XBar(clk_domain = system.cpu_clk_domain)
 
-        system.tol2bus = L2XBar(clk_domain = system.cpu_clk_domain)
-        system.l2.cpu_side = system.tol2bus.master
-        system.l2.mem_side = system.membus.slave
+        if options.l2_size is not None:
+            system.l2cache.size=options.l2_size
+        if options.l2_assoc is not None:
+            system.l2cache.assoc=options.l2_assoc
+        system.l2cache.cpu_side = system.tol2bus.master
+        if options.l3cache:
+          system.l2cache.mem_side = system.tol3bus.slave
+        else:
+          system.l2cache.mem_side = system.membus.slave
 
     if options.memchecker:
         system.memchecker = MemChecker()
 
     for i in xrange(options.num_cpus):
         if options.caches:
-            icache = icache_class(size=options.l1i_size,
-                                  assoc=options.l1i_assoc)
-            dcache = dcache_class(size=options.l1d_size,
-                                  assoc=options.l1d_assoc)
+            icache = icache_class()
+            if options.l1i_size is not None:
+                icache.size=options.l1i_size
+            if options.l1i_assoc is not None:
+                icache.assoc=options.l1i_assoc
+            dcache = dcache_class()
+            if options.l1d_size is not None:
+                dcache.size=options.l1d_size
+            else:
+                print "dcache.size %d" % (dcache.size)
+            if options.l1d_assoc is not None:
+                dcache.assoc=options.l1d_assoc
 
             # If we have a walker cache specified, instantiate two
             # instances here
@@ -157,7 +232,20 @@ def config_cache(options, system):
                         ExternalCache("cpu%d.dcache" % i))
 
         system.cpu[i].createInterruptController()
-        if options.l2cache:
+
+        if options.l3cache:
+            print ".connectCachedPorts(system.tol2bus)"
+            system.cpu[i].connectCachedPorts(system.tol2bus)
+            print ".connectUncachedPorts(system.membus)"
+            system.cpu[i].connectUncachedPorts(system.membus)
+            #
+            #print ".connectAllPorts(system.tol3bus, system.membus)"
+            #system.cpu[i].connectAllPorts(system.tol3bus, system.membus)
+            #print ".connectCachedPorts(system.tol3bus)"
+            #system.cpu[i].connectCachedPorts(system.tol3bus)
+            #system.cpu[i].connectAllPorts(system.tol2bus, system.tol3bus)
+            #system.cpu[i].connectCachedPorts(system.tol3bus)
+        elif options.l2cache:
             system.cpu[i].connectAllPorts(system.tol2bus, system.membus)
         elif options.external_memory_system:
             system.cpu[i].connectUncachedPorts(system.membus)

@@ -63,6 +63,7 @@ from SubSystem import SubSystem
 from Graphics import ImageFormat
 from ClockedObject import ClockedObject
 from PS2 import *
+from VirtIO import PciVirtIO
 from VirtIOMMIO import MmioVirtIO
 
 # Platforms with KVM support should generally use in-kernel GIC
@@ -617,9 +618,10 @@ class RealViewPBX(RealView):
     mcc = VExpressMCC()
     dcc = CoreTile2A15DCC()
     gic = Pl390()
-    pci_host = GenericPciHost(
+    pci_host = GenericArmPciHost(
         conf_base=0x30000000, conf_size='256MB', conf_device_bits=16,
-        pci_pio_base=0)
+        pci_pio_base=0,
+        int_policy="ARM_PCI_INT_DEV", int_base=100, int_count=4)
     timer0 = Sp804(int_num0=36, int_num1=36, pio_addr=0x10011000)
     timer1 = Sp804(int_num0=37, int_num1=37, pio_addr=0x10012000)
     global_timer = A9GlobalTimer(int_num=27, pio_addr=0x1f000200)
@@ -898,9 +900,10 @@ class VExpress_EMM(RealView):
 
     ### Off-chip devices ###
     uart = Pl011(pio_addr=0x1c090000, int_num=37)
-    pci_host = GenericPciHost(
-        conf_base=0x30000000, conf_size='256MB', conf_device_bits=16,
-        pci_pio_base=0)
+    pci_host = GenericArmPciHost(
+        conf_base=0x30000000, conf_size='256MB', conf_device_bits=12,
+        pci_pio_base=0x2f000000,
+        int_policy="ARM_PCI_INT_DEV", int_base=100, int_count=4)
 
     generic_timer = GenericTimer(int_phys_s=29, int_phys_ns=30,
                                  int_virt=27, int_hyp=26)
@@ -920,15 +923,15 @@ class VExpress_EMM(RealView):
     rtc            = PL031(pio_addr=0x1C170000, int_num=36)
 
     l2x0_fake      = IsaFake(pio_addr=0x2C100000, pio_size=0xfff)
-    uart1_fake     = AmbaFake(pio_addr=0x1C0A0000)
-    uart2_fake     = AmbaFake(pio_addr=0x1C0B0000)
-    uart3_fake     = AmbaFake(pio_addr=0x1C0C0000)
+    uart1_fake     = AmbaFake(pio_addr=0x1C0A0000, ignore_access=True)
+    uart2_fake     = AmbaFake(pio_addr=0x1C0B0000, ignore_access=True)
+    uart3_fake     = AmbaFake(pio_addr=0x1C0C0000, ignore_access=True)
     sp810_fake     = AmbaFake(pio_addr=0x1C020000, ignore_access=True)
-    watchdog_fake  = AmbaFake(pio_addr=0x1C0F0000)
-    aaci_fake      = AmbaFake(pio_addr=0x1C040000)
+    watchdog_fake  = AmbaFake(pio_addr=0x1C0F0000, ignore_access=True)
+    aaci_fake      = AmbaFake(pio_addr=0x1C040000, ignore_access=True)
     lan_fake       = IsaFake(pio_addr=0x1A000000, pio_size=0xffff)
     usb_fake       = IsaFake(pio_addr=0x1B000000, pio_size=0x1ffff)
-    mmc_fake       = AmbaFake(pio_addr=0x1c050000)
+    mmc_fake       = AmbaFake(pio_addr=0x1c050000, ignore_access=True)
     energy_ctrl    = EnergyCtrl(pio_addr=0x1c080000)
 
     def _off_chip_devices(self):
@@ -961,6 +964,8 @@ class VExpress_EMM(RealView):
             devices.append(self.ide)
         if hasattr(self, "ethernet"):
             devices.append(self.ethernet)
+        if hasattr(self, "virtio"):
+            devices.append(self.virtio)
         return devices
 
     # Attach any PCI devices that are supported
@@ -969,6 +974,8 @@ class VExpress_EMM(RealView):
                                    InterruptLine=1, InterruptPin=1)
         self.ide = IdeController(disks = [], pci_bus=0, pci_dev=1, pci_func=0,
                                  InterruptLine=2, InterruptPin=2)
+        self.virtio = PciVirtIO(pci_bus=0, pci_dev=2, pci_func=0,
+                                 InterruptLine=3, InterruptPin=3)
 
     def enableMSIX(self):
         self.gic = Pl390(dist_addr=0x2C001000, cpu_addr=0x2C002000, it_lines=512)
@@ -989,9 +996,10 @@ class VExpress_EMM64(VExpress_EMM):
     # Three memory regions are specified totalling 512GB
     _mem_regions = [(Addr('2GB'), Addr('2GB')), (Addr('34GB'), Addr('30GB')),
                     (Addr('512GB'), Addr('480GB'))]
-    pci_host = GenericPciHost(
+    pci_host = GenericArmPciHost(
         conf_base=0x30000000, conf_size='256MB', conf_device_bits=12,
-        pci_pio_base=0x2f000000)
+        pci_pio_base=0x2f000000,
+        int_policy="ARM_PCI_INT_DEV", int_base=100, int_count=4)
 
     def setupBootLoader(self, mem_bus, cur_sys, loc):
         cur_sys.bootmem = SimpleMemory(range=AddrRange(0, size='64MB'),

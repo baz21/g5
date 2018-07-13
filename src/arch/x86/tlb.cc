@@ -52,6 +52,8 @@
 #include "base/trace.hh"
 #include "cpu/thread_context.hh"
 #include "debug/TLB.hh"
+#include "debug/XXXBZ.hh"
+#include "debug/XXXBZ2.hh"
 #include "mem/page_table.hh"
 #include "mem/request.hh"
 #include "sim/full_system.hh"
@@ -73,6 +75,15 @@ TLB::TLB(const Params *p)
 
     walker = p->walker;
     walker->setTLB(this);
+
+    DPRINTF(XXXBZ, "%s:%d size %x walker %#x\n",
+        __func__, __LINE__, size, walker);
+}
+
+void
+TLB::dump(const char *descr)
+{
+        trie.dump(descr);
 }
 
 void
@@ -80,6 +91,7 @@ TLB::evictLRU()
 {
     // Find the entry with the lowest (and hence least recently updated)
     // sequence number.
+    DPRINTF(XXXBZ, "%s:%d size %x\n", __func__, __LINE__, size);
 
     unsigned lru = 0;
     for (unsigned i = 1; i < size; i++) {
@@ -93,15 +105,60 @@ TLB::evictLRU()
     freeList.push_back(&tlb[lru]);
 }
 
+#define	PRINT_TLBENTRY(_e)	\
+    PRINT_TLBENTRY_T(XXXBZ, (_e))
+#define	PRINT_TLBENTRY_T(___t, _e)	\
+    DPRINTF(___t, "%s:%d TLBEntry paddr %#x vaddr %#x logBytes %#x " \
+            "writable %#x user %#x uncacheable %#x global %#x patBit %#x " \
+            "noExec %#x lruSeq %#x\n", __func__, __LINE__, \
+            (_e)->paddr, (_e)->vaddr, (_e)->logBytes, (_e)->writable, \
+            (_e)->user, (_e)->uncacheable, (_e)->global, (_e)->patBit, \
+            (_e)->noExec, (_e)->lruSeq)
+
 TlbEntry *
-TLB::insert(Addr vpn, const TlbEntry &entry)
+TLB::insert(Addr vpn, const TlbEntry &entry, ThreadContext *tc)
 {
     // If somebody beat us to it, just use that existing entry.
+#ifdef BZ
+    PRINT_TLBENTRY(&entry);
+#endif
     TlbEntry *newEntry = trie.lookup(vpn);
     if (newEntry) {
-        assert(newEntry->vaddr == vpn);
+        assert(newEntry->vaddr == entry.vaddr);
         return newEntry;
     }
+
+#if 1
+    DPRINTF(XXXBZ, "%s:%d vpn %#x newEntry %#x\n",
+        __func__, __LINE__, vpn, newEntry);
+    if (newEntry && entry.logBytes == newEntry->logBytes) {
+        assert(newEntry->vaddr == entry.vaddr);
+#if 0
+        if (0 && (vpn == 0xfffffe0000400000 ||
+            entry.vaddr == 0xfffffe0000400000)) {
+
+            dump("TLB::insert newEntry there already");
+            PRINT_TLBENTRY(newEntry);
+        }
+#endif
+        return newEntry;
+    } else {
+        if (newEntry) {
+            DPRINTF(XXXBZ2, "%s:%d vpn %#x LOOKUP FAILURE: newEntry %#x; "
+                "entry, newEntry logBytes differ?\n",
+                __func__, __LINE__, vpn, newEntry);
+            PRINT_TLBENTRY_T(XXXBZ2, &entry);
+            DPRINTF(XXXBZ2, "%s:%d vpn %#x newEntry %#x DELETING\n",
+                __func__, __LINE__, vpn, newEntry);
+            PRINT_TLBENTRY_T(XXXBZ2, newEntry);
+            trie.remove(newEntry->trieHandle);
+            newEntry->trieHandle = NULL;
+            freeList.push_back(newEntry);
+            // XXX-BZ we should probably nuke all entries matching the
+            // region of the new entry.
+        }
+    }
+#endif
 
     if (freeList.empty())
         evictLRU();
@@ -111,16 +168,49 @@ TLB::insert(Addr vpn, const TlbEntry &entry)
 
     *newEntry = entry;
     newEntry->lruSeq = nextSeq();
+#if 0
     newEntry->vaddr = vpn;
-    newEntry->trieHandle =
-    trie.insert(vpn, TlbEntryTrie::MaxBits - entry.logBytes, newEntry);
+#endif
+#if 0
+    if (vpn == 0xfffffe0000400000 || entry.vaddr == 0xfffffe0000400000)
+        dump("TLB::insert before trie.insert");
+#endif
+    newEntry->trieHandle = trie.insert(entry.vaddr,
+        TlbEntryTrie::MaxBits - entry.logBytes, newEntry);
+#if 0
+    if (vpn == 0xfffffe0000400000 || entry.vaddr == 0xfffffe0000400000) {
+        dump("TLB::insert after trie.insert");
+        PRINT_TLBENTRY(newEntry);
+    }
+#endif
+    ppRefills->notify(1);
+    ppTLBRefills->notify(std::make_tuple(entry.vaddr, tc->instAddr(),
+        entry.logBytes));
     return newEntry;
+}
+
+void
+TLB::regProbePoints()
+{
+    ppRefills.reset(new ProbePoints::PMU(getProbeManager(), "Refills"));
+    ppTLBRefills.reset(new ProbePoints::TLB(getProbeManager(), "TLBRefills"));
+    ppTLBHit.reset(new ProbePoints::TLB(getProbeManager(), "TLBHit"));
+    ppTLBMiss.reset(new ProbePoints::TLB(getProbeManager(), "TLBMiss"));
 }
 
 TlbEntry *
 TLB::lookup(Addr va, bool update_lru)
 {
     TlbEntry *entry = trie.lookup(va);
+    DPRINTF(XXXBZ, "%s:%d va %#x update_lru %d entry %#x\n",
+        __func__, __LINE__, va, update_lru, entry);
+#if 0
+    if (va == 0xfffffe00005fc000) {
+        dump("TLB::lookup");
+        if (entry)
+            PRINT_TLBENTRY(entry);
+    }
+#endif
     if (entry && update_lru)
         entry->lruSeq = nextSeq();
     return entry;
@@ -142,6 +232,7 @@ TLB::flushAll()
 void
 TLB::setConfigAddress(uint32_t addr)
 {
+    DPRINTF(XXXBZ, "%s:%d addr %#x\n", __func__, __LINE__, addr);
     configAddress = addr;
 }
 
@@ -162,6 +253,7 @@ void
 TLB::demapPage(Addr va, uint64_t asn)
 {
     TlbEntry *entry = trie.lookup(va);
+    DPRINTF(XXXBZ, "%s:%d va %#x entry %#x\n", __func__, __LINE__, va, entry);
     if (entry) {
         trie.remove(entry->trieHandle);
         entry->trieHandle = NULL;
@@ -172,9 +264,10 @@ TLB::demapPage(Addr va, uint64_t asn)
 Fault
 TLB::translateInt(const RequestPtr &req, ThreadContext *tc)
 {
-    DPRINTF(TLB, "Addresses references internal memory.\n");
     Addr vaddr = req->getVaddr();
     Addr prefix = (vaddr >> 3) & IntAddrPrefixMask;
+    DPRINTF(TLB, "Addresses references internal memory req %#x vaddr %#x "
+        "prefix %#x.\n", req, vaddr, prefix);
     if (prefix == IntAddrPrefixCPUID) {
         panic("CPUID memory space not yet implemented!\n");
     } else if (prefix == IntAddrPrefixMSR) {
@@ -182,8 +275,11 @@ TLB::translateInt(const RequestPtr &req, ThreadContext *tc)
         req->setFlags(Request::MMAPPED_IPR);
 
         MiscRegIndex regNum;
-        if (!msrAddrToIndex(regNum, vaddr))
+        if (!msrAddrToIndex(regNum, vaddr)) {
+            warn_once("MSR vaddr %#x lookup failed.\n", vaddr);
+            DPRINTF(TLB, "MSR vaddr %#x lookup failed.\n", vaddr);
             return std::make_shared<GeneralProtection>(0);
+        }
 
         //The index is multiplied by the size of a MiscReg so that
         //any memory dependence calculations will not see these as
@@ -230,6 +326,8 @@ TLB::finalizePhysical(const RequestPtr &req,
     Addr paddr = req->getPaddr();
 
     AddrRange m5opRange(0xFFFF0000, 0xFFFFFFFF);
+    DPRINTF(XXXBZ, "%s:%d req %#x paddr %#x mode %#x\n",
+        __func__, __LINE__, req, paddr, mode);
 
     if (m5opRange.contains(paddr)) {
         req->setFlags(Request::MMAPPED_IPR | Request::GENERIC_IPR |
@@ -273,6 +371,9 @@ TLB::translate(const RequestPtr &req,
     Request::Flags flags = req->getFlags();
     int seg = flags & SegmentFlagMask;
     bool storeCheck = flags & (StoreCheck << FlagShift);
+
+    DPRINTF(XXXBZ, "%s:%d req %#x mode %#x delayedResponse %d = false, "
+        "timing %d\n", __func__, __LINE__, req, mode, delayedResponse, timing);
 
     delayedResponse = false;
 
@@ -343,6 +444,8 @@ TLB::translate(const RequestPtr &req,
                 DPRINTF(TLB, "Handling a TLB miss for "
                         "address %#x at pc %#x.\n",
                         vaddr, tc->instAddr());
+                ppTLBMiss->notify(std::make_tuple(req->getVaddr(),
+                    tc->instAddr(), 0));
                 if (mode == Read) {
                     rdMisses++;
                 } else {
@@ -352,6 +455,12 @@ TLB::translate(const RequestPtr &req,
                     Fault fault = walker->start(tc, translation, req, mode);
                     if (timing || fault != NoFault) {
                         // This gets ignored in atomic mode.
+                        DPRINTF(TLB, "FS TLB walker timing %s fault %s "
+                            "NoFault vaddr %#x at pc %#x; "
+                            "delayedResponse = true\n",
+                            (timing) ? "yes" : "no",
+                            (fault == NoFault) ? "==" : "!=",
+                            vaddr, tc->instAddr());
                         delayedResponse = true;
                         return fault;
                     }
@@ -378,11 +487,14 @@ TLB::translate(const RequestPtr &req,
                         entry = insert(alignedVaddr, TlbEntry(
                                 p->pTable->pid(), alignedVaddr, pte->paddr,
                                 pte->flags & EmulationPageTable::Uncacheable,
-                                pte->flags & EmulationPageTable::ReadOnly));
+                                pte->flags & EmulationPageTable::ReadOnly),
+                                tc);
                     }
                     DPRINTF(TLB, "Miss was serviced.\n");
                 }
-            }
+            } else
+                ppTLBHit->notify(std::make_tuple(req->getVaddr(),
+                    tc->instAddr(), entry->logBytes));
 
             DPRINTF(TLB, "Entry found with paddr %#x, "
                     "doing protection checks.\n", entry->paddr);
@@ -430,6 +542,7 @@ Fault
 TLB::translateAtomic(const RequestPtr &req, ThreadContext *tc, Mode mode)
 {
     bool delayedResponse;
+    DPRINTF(XXXBZ, "%s:%d req %#x mode %#x\n", __func__, __LINE__, req, mode);
     return TLB::translate(req, tc, NULL, mode, delayedResponse, false);
 }
 
@@ -439,8 +552,11 @@ TLB::translateTiming(const RequestPtr &req, ThreadContext *tc,
 {
     bool delayedResponse;
     assert(translation);
+    DPRINTF(XXXBZ, "%s:%d req %#x mode %#x\n", __func__, __LINE__, req, mode);
     Fault fault =
         TLB::translate(req, tc, translation, mode, delayedResponse, true);
+    DPRINTF(XXXBZ, "%s:%d req %#x mode %#x delayedResponse %#x\n",
+        __func__, __LINE__, req, mode, delayedResponse);
     if (!delayedResponse)
         translation->finish(fault, req, tc, mode);
 }

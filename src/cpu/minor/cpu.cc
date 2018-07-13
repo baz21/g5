@@ -352,3 +352,47 @@ MinorCPU::totalOps() const
 
     return ret;
 }
+
+void
+MinorCPU::regProbePoints()
+{
+    DPRINTF(MinorCPU, "XXX-BZ Registering CPU MinorCPU::regProbePoints()\n");
+#if 0
+    ppCPUCycles = new ProbePointArg<Minor::MinorDynInstPtr>(getProbeManager(),
+        "CPUMinorCycles");
+#endif
+
+    ppCPURetiredInsts =
+        new ProbePointArg<Minor::MinorDynInstPtr>(getProbeManager(),
+        "CPUMinorRetiredInsts");
+    ppCPURetiredLoads =
+        new ProbePointArg<Minor::MinorDynInstPtr>(getProbeManager(),
+        "CPUMinorRetiredLoads");
+    ppCPURetiredStores =
+        new ProbePointArg<Minor::MinorDynInstPtr>(getProbeManager(),
+        "CPUMinorRetiredStores");
+    ppCPURetiredBranches =
+        new ProbePointArg<Minor::MinorDynInstPtr>(getProbeManager(),
+        "CPUMinorRetiredBranches");
+
+    pipeline->regProbePoints();
+
+    DPRINTF(MinorCPU, "XXX-BZ Registering CPU BaseCPU::regProbePoints()\n");
+    BaseCPU::regProbePoints();
+}
+
+void
+MinorCPU::probeInstCommitCPU(const Minor::MinorDynInstPtr &inst)
+{
+    if (!inst->staticInst->isMicroop() || inst->staticInst->isLastMicroop())
+        ppCPURetiredInsts->notify(inst);
+
+    if (inst->staticInst->isLoad())
+        ppCPURetiredLoads->notify(inst);
+
+    if (inst->staticInst->isStore())
+        ppCPURetiredStores->notify(inst);
+
+    if (inst->staticInst->isControl())
+        ppCPURetiredBranches->notify(inst);
+}

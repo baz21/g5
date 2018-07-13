@@ -42,6 +42,8 @@ Import('*')
 if 'O3CPU' in env['CPU_MODELS']:
     SimObject('SimpleTrace.py')
     Source('simple_trace.cc')
+    Source('simple_trace_tlb.cc')
+    Source('simple_trace_cache.cc')
     DebugFlag('SimpleTrace')
 
     if env['HAVE_PROTOBUF']:

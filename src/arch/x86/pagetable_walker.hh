@@ -116,6 +116,7 @@ namespace X86ISA
                         const RequestPtr &_req, bool _isFunctional = false) :
                 walker(_walker), req(_req), state(Ready),
                 nextState(Ready), inflight(0),
+                read(0),
                 translation(_translation),
                 functional(_isFunctional), timing(false),
                 retrying(false), started(false)

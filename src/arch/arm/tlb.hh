@@ -53,6 +53,7 @@
 #include "mem/request.hh"
 #include "params/ArmTLB.hh"
 #include "sim/probe/pmu.hh"
+#include "sim/probe/tlb.hh"
 
 class ThreadContext;
 
@@ -187,8 +188,11 @@ class TLB : public BaseTLB
     Stats::Formula misses;
     Stats::Formula accesses;
 
-    /** PMU probe for TLB refills */
+    /** PMU and TLB probe for TLB refills */
     ProbePoints::PMUUPtr ppRefills;
+    ProbePoints::TLBUPtr ppTLBRefills;
+    ProbePoints::TLBUPtr ppTLBHit;
+    ProbePoints::TLBUPtr ppTLBMiss;
 
     int rangeMRU; //On lookup, only move entries ahead when outside rangeMRU
 
@@ -225,7 +229,7 @@ class TLB : public BaseTLB
 
     int getsize() const { return size; }
 
-    void insert(Addr vaddr, TlbEntry &pte);
+    void insert(Addr vaddr, TlbEntry &pte, ThreadContext *tc);
 
     Fault getTE(TlbEntry **te, const RequestPtr &req,
                 ThreadContext *tc, Mode mode,

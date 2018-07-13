@@ -43,7 +43,7 @@
 ifneq ($(shell uname -m), armv7l)
 CROSS_COMPILE?=arm-linux-gnueabi-
 endif
-CC=$(CROSS_COMPILE)gcc
+CC?=$(CROSS_COMPILE)cc
 AS=$(CROSS_COMPILE)as
 LD=$(CROSS_COMPILE)ld
 AR=$(CROSS_COMPILE)ar
@@ -54,8 +54,8 @@ JR=jar
 ### JDK_PATH must be set to build gem5OpJni
 #JDK_PATH=/path/to/jdk/version_number
 
-CFLAGS=-O2 -I $(JDK_PATH)/include/ -I $(JDK_PATH)/include/linux \
-       -I$(PWD)/../../include -march=armv7-a
+CFLAGS=-O2 -I /usr/include \
+        -I $(JDK_PATH)/include/ -I $(JDK_PATH)/include/linux -march=armv7-a
 LDFLAGS=-L. -lm5 -static
 
 LIB_OBJS=m5op_arm.o m5_mmap.o

@@ -27,4 +27,9 @@
 # Authors: Nathan Binkert
 
 # Export native methods to Python
-from _m5.trace import output, ignore, disable, enable
+import m5
+from _m5.trace import output, ignore, disable, enable, toggle
+
+#def toggle():
+#    m5.internal.trace.toggle()
+

@@ -98,18 +98,21 @@ def addNoISAOptions(parser):
                       help="use external port for SystemC TLM cosimulation")
     parser.add_option("--caches", action="store_true")
     parser.add_option("--l2cache", action="store_true")
+    parser.add_option("--l3cache", action="store_true")
     parser.add_option("--num-dirs", type="int", default=1)
     parser.add_option("--num-l2caches", type="int", default=1)
     parser.add_option("--num-l3caches", type="int", default=1)
-    parser.add_option("--l1d_size", type="string", default="64kB")
-    parser.add_option("--l1i_size", type="string", default="32kB")
-    parser.add_option("--l2_size", type="string", default="2MB")
-    parser.add_option("--l3_size", type="string", default="16MB")
-    parser.add_option("--l1d_assoc", type="int", default=2)
-    parser.add_option("--l1i_assoc", type="int", default=2)
-    parser.add_option("--l2_assoc", type="int", default=8)
-    parser.add_option("--l3_assoc", type="int", default=16)
-    parser.add_option("--cacheline_size", type="int", default=64)
+    parser.add_option("--l1d_size", type="string") # , default="64kB")
+    parser.add_option("--l1i_size", type="string") # , default="32kB")
+    parser.add_option("--l2_size", type="string") # , default="2MB")
+    parser.add_option("--l3_size", type="string") # , default="16MB")
+    parser.add_option("--l1d_assoc", type="int") # , default=2)
+    parser.add_option("--l1i_assoc", type="int") # , default=2)
+    parser.add_option("--l2_assoc", type="int") # , default=8)
+    parser.add_option("--l3_assoc", type="int") # , default=16)
+    parser.add_option("--cacheline_size", type="int") # , default=64)
+    parser.add_option("--cache_config", type="string",
+                      help="Select a sepcifc cache configuration")
 
     # Enable Ruby
     parser.add_option("--ruby", action="store_true")
@@ -147,6 +150,9 @@ def addCommonOptions(parser):
                       Only used if multiple programs are specified. If true,
                       then the number of threads per cpu is same as the
                       number of programs.""")
+    parser.add_option("--simple-trace-en", action="store_true",
+                      help="""Enable capture of instruction fetch and
+                      commit traces using the simple trace probe.""")
     parser.add_option("--elastic-trace-en", action="store_true",
                       help="""Enable capture of data dependency and instruction
                       fetch traces using elastic trace probe.""")
@@ -346,6 +352,19 @@ def addFSOptions(parser):
         parser.add_option("--generate-dtb", action="store_true", default=False,
                     help="Automatically generate a dtb file")
 
+        parser.add_option("--pmu", action="store_true",
+                help="Enable PMU instruction support")
+        # Boot laoder options file
+        parser.add_option("--loader-config-file", action="store",
+                default=None, type="string",
+                help="File containing boot loader options passed to kernel")
+
+    if buildEnv['TARGET_ISA'] == "x86":
+        # Boot laoder options file
+        parser.add_option("--loader-config-file", action="store",
+                default=None, type="string",
+                help="File containing boot loader options passed to kernel")
+
     # Benchmark options
     parser.add_option("--dual", action="store_true",
                       help="Simulate two systems attached with an ethernet link")
@@ -364,6 +383,8 @@ def addFSOptions(parser):
                       help="Path to the disk image to use.")
     parser.add_option("--root-device", action="store", type="string", default=None,
                       help="OS device name for root partition")
+    parser.add_option("--virtblk", action="store_true",
+                      help="Prefer VirtIO Block device for given disk-image")
 
     # Command line options
     parser.add_option("--command-line", action="store", type="string",

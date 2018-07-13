@@ -74,6 +74,7 @@
 #include "mem/qport.hh"
 #include "mem/request.hh"
 #include "sim/eventq.hh"
+#include "sim/probe/cache.hh"
 #include "sim/serialize.hh"
 #include "sim/sim_exit.hh"
 #include "sim/system.hh"
@@ -752,6 +753,7 @@ class BaseCache : public MemObject
     Tick nextQueueReadyTime() const;
 
     /** Block size of this cache */
+// XXX-BZ TODO FIXME
     const unsigned blkSize;
 
     /**
@@ -969,6 +971,21 @@ class BaseCache : public MemObject
      */
     void regStats() override;
 
+    protected:
+      /** PMU and CACHE probe for CACHE refills */
+      ProbePoints::CACHEUPtr ppCACHEHit;
+      ProbePoints::CACHEUPtr ppCACHEMiss;
+
+      void regProbePoints()
+      {
+        ppCACHEHit.reset(new ProbePoints::CACHE(getProbeManager(),
+            "CACHEHit"));
+        ppCACHEMiss.reset(new ProbePoints::CACHE(getProbeManager(),
+            "CACHEMiss"));
+      }
+
+
+
   public:
     BaseCache(const BaseCacheParams *p, unsigned blk_size);
     ~BaseCache();
@@ -1102,6 +1119,10 @@ class BaseCache : public MemObject
         assert(pkt->req->masterId() < system->maxMasters());
         misses[pkt->cmdToIndex()][pkt->req->masterId()]++;
         pkt->req->incAccessDepth();
+        ppCACHEMiss->notify(std::make_tuple(pkt->getAddr(),
+            pkt->req && pkt->req->hasPC() ?
+                pkt->req->getPC() : 0,
+            pkt->getSize(), pkt->cmdString()));
         if (missCount) {
             --missCount;
             if (missCount == 0)
@@ -1112,6 +1133,10 @@ class BaseCache : public MemObject
     {
         assert(pkt->req->masterId() < system->maxMasters());
         hits[pkt->cmdToIndex()][pkt->req->masterId()]++;
+        ppCACHEHit->notify(std::make_tuple(pkt->getAddr(),
+            pkt->req && pkt->req->hasPC() ?
+                pkt->req->getPC() : 0,
+            pkt->getSize(), pkt->cmdString()));
 
     }
 

@@ -128,6 +128,8 @@ void initCPU(ThreadContext *tc, int cpuId)
     tc->setMiscReg(MISCREG_MCG_STATUS, 0);
     tc->setMiscReg(MISCREG_MCG_CTL, 0);
 
+    tc->setMiscReg(MISCREG_IA32_MISC_ENABLE, 0x400841801);
+
     for (int i = 0; i < 5; i++) {
         tc->setMiscReg(MISCREG_MC_CTL(i), 0);
         tc->setMiscReg(MISCREG_MC_STATUS(i), 0);

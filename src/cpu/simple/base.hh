@@ -158,6 +158,25 @@ class BaseSimpleCPU : public BaseCPU
     void serializeThread(CheckpointOut &cp, ThreadID tid) const override;
     void unserializeThread(CheckpointIn &cp, ThreadID tid) override;
 
+    void regProbePoints();
+
+    void probeInstCommitCPU(const StaticInstPtr &inst);
+
+  private:
+#if 0
+    ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+        *ppCPUCycles;
+#endif
+    ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+        *ppCPURetiredInsts;
+    ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+        *ppCPURetiredLoads;
+    ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+        *ppCPURetiredStores;
+    ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+        *ppCPURetiredBranches;
+    ProbePointArg<std::pair<SimpleThread*, const StaticInstPtr>>
+        *ppCPUMispredict;
 };
 
 #endif // __CPU_SIMPLE_BASE_HH__

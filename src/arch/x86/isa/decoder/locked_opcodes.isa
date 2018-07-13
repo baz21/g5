@@ -37,7 +37,7 @@
 // reference to make sure these are the memory forms of these instructions.
 0x1: decode MODRM_MOD {
     format Inst {
-        0x3: UD2();
+        0x3: M5InternalError::error({{"./decoder/locked_opcodes.isa 40"}});
         default: decode OPCODE_TYPE {
             'X86ISA::OneByteOpcode': decode OPCODE_OP_TOP5 {
                 0x00: decode OPCODE_OP_BOTTOM3 {
@@ -88,7 +88,8 @@
                         0x6: XOR_LOCKED(Mv,Iz);
                     }
                     0x2: decode MODE_SUBMODE {
-                        0x0: UD2();
+                        0x0: M5InternalError::error(
+                            {{"./decoder/locked_opcodes.isa 91"}});
                         default: decode MODRM_REG {
                             0x0: ADD_LOCKED(Mb,Ib);
                             0x1: OR_LOCKED(Mb,Ib);
@@ -128,7 +129,8 @@
                     0x6: decode MODRM_REG {
                         0x0: INC_LOCKED(Mb);
                         0x1: DEC_LOCKED(Mb);
-                        default: UD2();
+                        default: M5InternalError::error(
+                            {{"./decoder/locked_opcodes.isa 131"}});
                     }
                     //0x7: group5();
                     0x7: decode MODRM_REG {

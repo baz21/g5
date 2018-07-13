@@ -32,32 +32,33 @@
 
 #include <gem5/asm/generic/m5ops.h>
 
+#define	CNAME(csym)	csym
+#define	END(csym)	.size csym, . - csym
+
 #if defined(M5OP_ADDR) && defined(M5OP_PIC)
 /* Use the memory mapped m5op interface */
 #define TWO_BYTE_OP(name, number)         \
-        .globl name;                      \
-        .func name;                       \
-name:                                     \
+        .text; .p2align 4,0x90;           \
+        .globl CNAME(name); .type CNAME(name),@function; CNAME(name): \
         mov m5_mem@gotpcrel(%rip), %r11;  \
         mov (%r11), %r11;                 \
         mov $number, %rax;                \
         shl $8, %rax;                     \
         mov 0(%r11, %rax, 1), %rax;       \
         ret;                              \
-        .endfunc;
+END(name);
 
 #elif defined(M5OP_ADDR) && !defined(M5OP_PIC)
 /* Use the memory mapped m5op interface */
 #define TWO_BYTE_OP(name, number)         \
-        .globl name;                      \
-        .func name;                       \
-name:                                     \
+        .text; .p2align 4,0x90;           \
+        .globl CNAME(name); .type CNAME(name),@function; CNAME(name): \
         mov m5_mem, %r11;                 \
         mov $number, %rax;                \
         shl $8, %rax;                     \
         mov 0(%r11, %rax, 1), %rax;       \
         ret;                              \
-        .endfunc;
+END(name);
 
 #else
 /* Use the magic instruction based m5op interface. This does not work
@@ -65,13 +66,12 @@ name:                                     \
  */
 
 #define TWO_BYTE_OP(name, number)         \
-        .globl name;                      \
-        .func name;                       \
-name:                                     \
+        .text; .p2align 4,0x90;           \
+        .globl CNAME(name); .type CNAME(name),@function; CNAME(name): \
         .byte 0x0F, 0x04;                 \
         .word number;                     \
         ret;                              \
-        .endfunc;
+END(name);
 
 #endif
 
@@ -96,6 +96,7 @@ TWO_BYTE_OP(m5_debug_break, M5OP_DEBUG_BREAK)
 TWO_BYTE_OP(m5_switch_cpu, M5OP_SWITCH_CPU)
 TWO_BYTE_OP(m5_add_symbol, M5OP_ADD_SYMBOL)
 TWO_BYTE_OP(m5_panic, M5OP_PANIC)
+TWO_BYTE_OP(m5_toggletracing, M5OP_TOGGLE_TRACING)
 TWO_BYTE_OP(m5_work_begin, M5OP_WORK_BEGIN)
 TWO_BYTE_OP(m5_work_end, M5OP_WORK_END)
 TWO_BYTE_OP(m5_dist_toggle_sync, M5OP_DIST_TOGGLE_SYNC)

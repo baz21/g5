@@ -45,6 +45,7 @@ const MsrMap::value_type msrMapData[] = {
     MsrVal(0x179, MISCREG_MCG_CAP),
     MsrVal(0x17A, MISCREG_MCG_STATUS),
     MsrVal(0x17B, MISCREG_MCG_CTL),
+    MsrVal(0x1A0, MISCREG_IA32_MISC_ENABLE),
     MsrVal(0x1D9, MISCREG_DEBUG_CTL_MSR),
     MsrVal(0x1DB, MISCREG_LAST_BRANCH_FROM_IP),
     MsrVal(0x1DC, MISCREG_LAST_BRANCH_TO_IP),

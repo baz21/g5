@@ -1126,7 +1126,7 @@ DefaultCommit<Impl>::commitInsts()
         }
     }
 
-    DPRINTF(CommitRate, "%i\n", num_committed);
+    DPRINTF(CommitRate, "%s: num_committed=%i\n", __func__, num_committed);
     numCommittedDist.sample(num_committed);
 
     if (num_committed == commitWidth) {
@@ -1200,7 +1200,9 @@ DefaultCommit<Impl>::commitHead(DynInstPtr &head_inst, unsigned inst_num)
                 head_inst->seqNum, head_inst->pcState());
 
         if (iewStage->hasStoresToWB(tid) || inst_num > 0) {
-            DPRINTF(Commit, "Stores outstanding, fault must wait.\n");
+            DPRINTF(Commit, "Inst [sn:%lli] PC %s: "
+                "Stores outstanding, fault must wait.\n",
+                head_inst->seqNum, head_inst->pcState());
             return false;
         }
 

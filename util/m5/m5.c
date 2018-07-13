@@ -102,6 +102,8 @@ parse_str_args_to_regs(int argc, char *argv[], uint64_t regs[], int len)
         if ((n % 8) == 7)
             i++;
     }
+
+    return (offset);
 }
 
 int
@@ -146,7 +148,7 @@ write_file(const char *filename, const char *host_filename)
 
     if (src_fid < 0) {
         fprintf(stderr, "error opening %s\n", filename);
-        return;
+        return (src_fid);
     }
 
     char buf[256*1024];
@@ -163,6 +165,8 @@ write_file(const char *filename, const char *host_filename)
     fprintf(stderr, "written %d bytes\n", bytes);
 
     close(src_fid);
+
+    return (bytes);
 }
 
 void
@@ -305,6 +309,16 @@ do_sw99param(int argc, char *argv[])
            (param >> 12) & 0xfff, (param >> 0) & 0xfff);
 }
 
+void
+do_toggletracing(int argc, char *argv[])
+{
+    if (argc > 0)
+        usage();
+
+    m5_toggletracing();
+}
+
+
 #ifdef linux
 void
 do_pin(int argc, char *argv[])
@@ -352,6 +366,7 @@ struct MainFunc mainfuncs[] = {
     { "initparam",      do_initparam,        "[key] // key must be shorter"
                                              " than 16 chars" },
     { "sw99param",      do_sw99param,        "" },
+    { "toggletracing",  do_toggletracing,    "" },
 #ifdef linux
     { "pin",            do_pin,              "<cpu> <program> [args ...]" }
 #endif
@@ -379,7 +394,7 @@ main(int argc, char *argv[])
 {
     progname = argv[0];
     if (argc < 2)
-        usage(1);
+        usage();
 
     map_m5_mem();
 
@@ -397,5 +412,5 @@ main(int argc, char *argv[])
         exit(0);
     }
 
-    usage(1);
+    usage();
 }

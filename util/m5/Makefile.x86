@@ -27,7 +27,7 @@
 # Authors: Nathan Binkert
 #          Ali Saidi
 
-CC=gcc
+CC=cc
 AS=as
 LD=ld
 

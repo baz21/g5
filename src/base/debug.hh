@@ -56,6 +56,7 @@ class Flag
 
     virtual void enable() = 0;
     virtual void disable() = 0;
+    virtual void toggle() = 0;
     virtual void sync() {}
 };
 
@@ -77,11 +78,13 @@ class SimpleFlag : public Flag
 
     void enable()  { _status = true;  sync(); }
     void disable() { _status = false; sync(); }
+    void toggle() { _status = !_status; sync(); }
 
     void sync() { _tracing = _active && _status; }
 
     static void enableAll();
     static void disableAll();
+    static void toggleAll();
 };
 
 class CompoundFlag : public Flag
@@ -120,6 +123,7 @@ class CompoundFlag : public Flag
 
     void enable();
     void disable();
+    void toggle();
 };
 
 typedef std::map<std::string, Flag *> FlagsMap;

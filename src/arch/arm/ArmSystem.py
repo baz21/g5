@@ -154,3 +154,6 @@ class LinuxArmSystem(GenericArmSystem):
 class FreebsdArmSystem(GenericArmSystem):
     type = 'FreebsdArmSystem'
     cxx_header = "arch/arm/freebsd/system.hh"
+
+    loader_config = VectorParam.String([], "Tunable strings");
+

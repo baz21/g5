@@ -42,25 +42,113 @@
 #include "base/trace.hh"
 #include "debug/SimpleTrace.hh"
 
-void SimpleTrace::traceCommit(const O3CPUImpl::DynInstPtr &dynInst)
+void SimpleTrace::traceFetch(const O3CPUImpl::DynInstPtr &dynInst)
 {
-    DPRINTFR(SimpleTrace, "[%s]: Commit 0x%08x %s.\n", name(),
+
+    DPRINTFR(SimpleTrace, "%7d: %s : Fetch 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
              dynInst->instAddr(),
+             dynInst->seqNum,
              dynInst->staticInst->disassemble(dynInst->instAddr()));
 }
 
-void SimpleTrace::traceFetch(const O3CPUImpl::DynInstPtr &dynInst)
+void SimpleTrace::traceMispredict(const O3CPUImpl::DynInstPtr &dynInst)
 {
-    DPRINTFR(SimpleTrace, "[%s]: Fetch 0x%08x %s.\n", name(),
+
+    DPRINTFR(SimpleTrace, "%7d: %s : Mispredict 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
              dynInst->instAddr(),
+             dynInst->seqNum,
              dynInst->staticInst->disassemble(dynInst->instAddr()));
+}
+
+void SimpleTrace::traceCommit(const O3CPUImpl::DynInstPtr &dynInst)
+{
+
+    DPRINTFR(SimpleTrace, "%7d: %s : Commit 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
+             dynInst->instAddr(),
+             dynInst->seqNum,
+             dynInst->staticInst->disassemble(dynInst->instAddr()));
+}
+
+#if 0
+void SimpleTrace::traceCyclesO3(const O3CPUImpl::DynInstPtr &inst)
+{
+    DPRINTFR(SimpleTrace, "%7d: %s : RetiredInsts 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
+             inst->instAddr(),
+             inst->seqNum,
+             inst->staticInst->disassemble(inst->instAddr()));
+}
+#endif
+
+void SimpleTrace::traceRetiredInstsO3(const O3CPUImpl::DynInstPtr &inst)
+{
+
+    DPRINTFR(SimpleTrace, "%7d: %s : RetiredInsts 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
+             inst->instAddr(),
+             inst->seqNum,
+             inst->staticInst->disassemble(inst->instAddr()));
+}
+
+void SimpleTrace::traceRetiredLoadsO3(const O3CPUImpl::DynInstPtr &inst)
+{
+
+    DPRINTFR(SimpleTrace, "%7d: %s : RetiredLoads 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
+             inst->instAddr(),
+             inst->seqNum,
+             inst->staticInst->disassemble(inst->instAddr()));
+}
+
+void SimpleTrace::traceRetiredStoresO3(const O3CPUImpl::DynInstPtr &inst)
+{
+
+    DPRINTFR(SimpleTrace, "%7d: %s : RetiredStores 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
+             inst->instAddr(),
+             inst->seqNum,
+             inst->staticInst->disassemble(inst->instAddr()));
+}
+
+void SimpleTrace::traceRetiredBranchesO3(const O3CPUImpl::DynInstPtr &inst)
+{
+
+    DPRINTFR(SimpleTrace, "%7d: %s : RetiredBranches 0x%08x [sN: %llu] %s.\n",
+             curTick(), name(),
+             inst->instAddr(),
+             inst->seqNum,
+             inst->staticInst->disassemble(inst->instAddr()));
 }
 
 void SimpleTrace::regProbeListeners()
 {
-    typedef ProbeListenerArg<SimpleTrace, O3CPUImpl::DynInstPtr> DynInstListener;
-    listeners.push_back(new DynInstListener(this, "Commit", &SimpleTrace::traceCommit));
-    listeners.push_back(new DynInstListener(this, "Fetch", &SimpleTrace::traceFetch));
+    DPRINTF(SimpleTrace, "XXX-BZ We went through "
+        "SimpleTrace::regProbeListener()...\n");
+
+    typedef ProbeListenerArg<SimpleTrace, O3CPUImpl::DynInstPtr>
+        DynInstListener;
+    listeners.push_back(new DynInstListener(this,
+        "Fetch", &SimpleTrace::traceFetch));
+    listeners.push_back(new DynInstListener(this,
+        "Mispredict", &SimpleTrace::traceMispredict));
+    listeners.push_back(new DynInstListener(this,
+        "Commit", &SimpleTrace::traceCommit));
+
+#if 0
+    listeners.push_back(new DynInstListener(this,
+        "CPUO3Cycles", &SimpleTrace::traceCyclesO3));
+#endif
+    listeners.push_back(new DynInstListener(this,
+        "CPUO3RetiredInsts", &SimpleTrace::traceRetiredInstsO3));
+    listeners.push_back(new DynInstListener(this,
+        "CPUO3RetiredLoads", &SimpleTrace::traceRetiredLoadsO3));
+    listeners.push_back(new DynInstListener(this,
+        "CPUO3RetiredStores", &SimpleTrace::traceRetiredStoresO3));
+    listeners.push_back(new DynInstListener(this,
+        "CPUO3RetiredBranches", &SimpleTrace::traceRetiredBranchesO3));
 }
 
 SimpleTrace*

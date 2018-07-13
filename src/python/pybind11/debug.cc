@@ -115,5 +115,6 @@ pybind_init_debug(py::module &m_native)
         .def("ignore", &ignore)
         .def("enable", &Trace::enable)
         .def("disable", &Trace::disable)
+        .def("toggle", &Trace::toggle)
         ;
 }

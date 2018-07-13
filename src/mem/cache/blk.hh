@@ -123,6 +123,20 @@ class CacheBlk : public ReplaceableEntry
     /** Tick on which the block was inserted in the cache. */
     Tick tickInserted;
 
+    /**
+     * Full address, not just tag.
+     * This way we avoid implementing it for each cache implementation
+     * and in case of non-reversible "hash" we do have a chance to get
+     * the full address at all.
+     */
+    Addr addr;
+
+    /** PC that got this here. */
+    Addr pc;
+
+    /** Tick from the request (PC) not when insert happened. */
+    Tick tickRequest;
+
   protected:
     /**
      * Represents that the indicated thread context has a "lock" on
@@ -340,8 +354,23 @@ class CacheBlk : public ReplaceableEntry
           default:    s = 'T'; break; // @TODO add other types
         }
         return csprintf("state: %x (%c) valid: %d writable: %d readable: %d "
-                        "dirty: %d tag: %x", status, s, isValid(),
-                        isWritable(), isReadable(), isDirty(), tag);
+                        "dirty: %d tag: %x addr: %#x pc %#x tickReq %llu: %s",
+                        status, s, isValid(),
+                        isWritable(), isReadable(), isDirty(), tag,
+                        addr, pc, tickRequest, "0x...");
+        /* XXX-BZ add hexdump of data. Needs to happen one layer up. */
+    }
+
+    /**
+     * Set metadata from the packet/request that normally does not end up in
+     * a cache implentation but that might turn out to be very useful for
+     * temporal analysis (backtracking) as well as simple debugging.
+     */
+    void setExtMeta(Addr _addr, Addr _pc, Tick _tick)
+    {
+        addr = _addr;
+        pc = _pc;
+        tickRequest = _tick;
     }
 
     /**

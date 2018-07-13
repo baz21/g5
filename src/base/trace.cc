@@ -99,6 +99,12 @@ disable()
     Debug::SimpleFlag::disableAll();
 }
 
+void
+toggle()
+{
+    Debug::SimpleFlag::toggleAll();
+}
+
 ObjectMatch ignore;
 
 void
