@@ -32,6 +32,11 @@
 #include <cerrno>
 #include <cstring>
 
+#if defined(__FreeBSD__)
+#include <sys/param.h>
+
+#endif
+
 #include "base/logging.hh"
 
 using namespace std;
@@ -89,7 +94,11 @@ Fiber::createContext()
 {
     // Set up a context for the new fiber, starting it in the trampoline.
     getcontext(&ctx);
+#if defined(__FreeBSD__) && (__FreeBSD_version < 1100097)
+    ctx.uc_stack.ss_sp = (char *)stack;
+#else
     ctx.uc_stack.ss_sp = stack;
+#endif
     ctx.uc_stack.ss_size = stackSize;
     ctx.uc_link = nullptr;
     makecontext(&ctx, &entryTrampoline, 0);
