@@ -849,7 +849,6 @@
                         0x0: M5InternalError::error(
                             {{"./decoder/two_byte_opcodes.isa 850"}});
                         0x1: Inst::CLWB(Mb);
-                        default: Inst::UD2();
                         default: M5InternalError::error(
                             {{"./decoder/two_byte_opcodes.isa 854"}});
                     }
